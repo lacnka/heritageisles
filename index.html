@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>HeritageGames</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{--p:#2D5A1B;--p2:#3D7A28;--p3:#4E9B35;--pl:#8FBC6A;--pp:#EFF6E8;--pu:#F6FAF2;--gd:#B8860B;--gd2:#D4A017;--gd3:#F0C040;--cr:#FAFAF7;--cr2:#F2F0EB;--cr3:#E8E4DC;--t1:#1A1A1A;--t2:#3D3D3D;--t3:#7A7A7A;--t4:#B0B0B0;--wh:#fff;--err:#C0392B;--errp:#FBEAE8;--s1:0 1px 8px rgba(0,0,0,.08);--s2:0 4px 20px rgba(0,0,0,.12);--r:16px}
+html,body{height:100%;overflow:hidden;background:#1A2E0E;font-family:'Inter',sans-serif;color:var(--t1)}
+#app{width:100%;max-width:430px;height:100dvh;margin:0 auto;background:var(--cr);display:flex;flex-direction:column;overflow:hidden;position:relative}
+.screen{position:absolute;inset:0;display:flex;flex-direction:column;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;transform:translateX(14px)}
+.screen.active{opacity:1;pointer-events:all;transform:translateX(0)}
+.sb{flex:1;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch}
+.sb::-webkit-scrollbar{display:none}
+/* AUTH */
+.aw{position:fixed;inset:0;background:linear-gradient(170deg,#0D1F08,#1E3D10 40%,#2D5A1B);z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 22px;overflow-y:auto;transition:opacity .3s}
+.aw.hidden{opacity:0;pointer-events:none}
+.a-logorow{display:flex;align-items:center;gap:12px;margin-bottom:5px}
+.a-logo{font-size:38px}
+.a-name{font-family:'Playfair Display',serif;font-size:25px;color:#fff;letter-spacing:.4px}
+.a-tag{font-size:12px;color:rgba(255,255,255,.52);margin-bottom:20px;text-align:center;line-height:1.6;max-width:270px}
+.langrow{display:flex;gap:6px;justify-content:center;margin-bottom:16px;flex-wrap:wrap}
+.lbtn{padding:5px 11px;border-radius:20px;border:1.5px solid rgba(255,255,255,.16);background:transparent;color:rgba(255,255,255,.52);font-family:'Inter',sans-serif;font-size:11px;font-weight:600;cursor:pointer;transition:all .18s}
+.lbtn.on{background:rgba(255,255,255,.13);color:#fff;border-color:rgba(255,255,255,.36)}
+.a-card{background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.11);border-radius:20px;padding:20px;width:100%;backdrop-filter:blur(12px)}
+.a-tabs{display:flex;background:rgba(0,0,0,.22);border-radius:10px;padding:3px;margin-bottom:16px}
+.a-tab{flex:1;text-align:center;padding:7px;border-radius:8px;font-size:13px;font-weight:700;color:rgba(255,255,255,.42);cursor:pointer;transition:all .18s}
+.a-tab.on{background:rgba(255,255,255,.13);color:#fff}
+.aflbl{font-size:10px;font-weight:700;color:rgba(255,255,255,.46);letter-spacing:.8px;text-transform:uppercase;margin-bottom:3px}
+.af{width:100%;padding:10px 12px;border:1.5px solid rgba(255,255,255,.11);border-radius:11px;font-family:'Inter',sans-serif;font-size:14px;background:rgba(255,255,255,.07);color:#fff;outline:none;margin-bottom:10px;-webkit-appearance:none;appearance:none}
+.af::placeholder{color:rgba(255,255,255,.28)}
+.af:focus{border-color:rgba(255,255,255,.36);background:rgba(255,255,255,.11)}
+.af option{color:#1a1a1a;background:#fff}
+.abtn{width:100%;padding:13px;border:none;border-radius:11px;background:var(--gd2);color:#1a1a1a;font-family:'Inter',sans-serif;font-size:15px;font-weight:800;cursor:pointer;transition:all .18s;margin-top:2px}
+.abtn:hover{background:var(--gd3);transform:translateY(-1px)}
+.abtn:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.amsg{border-radius:10px;padding:9px 12px;font-size:12px;margin-bottom:10px;line-height:1.5;display:none}
+.amsg.show{display:block}
+.amsg.err{background:rgba(192,57,43,.2);border:1px solid rgba(192,57,43,.3);color:#ffaaaa}
+.amsg.ok{background:rgba(45,90,27,.28);border:1px solid rgba(45,90,27,.45);color:#aaddaa}
+.a-fgt{text-align:center;margin-top:9px}
+.a-fgt a{font-size:12px;color:rgba(255,255,255,.4);cursor:pointer}
+.a-fgt a:hover{color:rgba(255,255,255,.75)}
+/* TOP BAR */
+.tb{background:var(--p);padding:50px 18px 14px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.tb-brand{display:flex;align-items:center;gap:9px}
+.tb-logo{font-size:20px}
+.tb-title{font-family:'Playfair Display',serif;font-size:16px;color:#fff}
+.tb-av{width:34px;height:34px;border-radius:50%;background:var(--gd2);color:#1a1a1a;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px solid rgba(255,255,255,.2);transition:transform .15s}
+.tb-av:hover{transform:scale(1.08)}
+/* NAV */
+.bn{background:var(--wh);border-top:1px solid rgba(0,0,0,.07);display:flex;padding:7px 0 calc(env(safe-area-inset-bottom,0px)+7px);flex-shrink:0}
+.nt{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;padding:5px 0;position:relative}
+.nt svg{width:20px;height:20px;stroke:var(--t4);fill:none;stroke-width:1.8;transition:stroke .18s}
+.nt span{font-size:9px;color:var(--t4);font-weight:500;transition:color .18s}
+.nt.on svg{stroke:var(--p)}
+.nt.on span{color:var(--p);font-weight:800}
+.nt.on::after{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:20px;height:2.5px;background:var(--p);border-radius:2px}
+/* PROGRESS */
+.pc{background:var(--wh);margin:12px 14px 0;border-radius:var(--r);padding:14px;border:1px solid rgba(0,0,0,.07);box-shadow:var(--s1)}
+.pc-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.pc-lbl{font-size:13px;font-weight:700}
+.pchip{background:var(--p);color:#fff;padding:4px 11px;border-radius:20px;font-size:11px;font-weight:800}
+.pbar{height:7px;background:rgba(0,0,0,.07);border-radius:4px;overflow:hidden;margin-bottom:5px}
+.pbarfill{height:100%;background:linear-gradient(90deg,var(--p),var(--gd2));border-radius:4px;transition:width 1s cubic-bezier(.4,0,.2,1)}
+.psub{font-size:11px;color:var(--t3)}
+.sh{font-size:10px;font-weight:800;letter-spacing:2px;color:var(--t4);padding:15px 14px 7px;text-transform:uppercase}
+/* REGION TABS */
+.rtabs{display:flex;gap:7px;padding:0 14px 10px;overflow-x:auto}
+.rtabs::-webkit-scrollbar{display:none}
+.rtab{flex-shrink:0;display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:20px;font-size:11px;font-weight:700;cursor:pointer;transition:all .18s;border:1.5px solid rgba(0,0,0,.09);color:var(--t3);background:var(--wh);box-shadow:var(--s1)}
+.rtab.on{background:var(--p);color:#fff;border-color:var(--p)}
+/* GAME CARDS */
+.gl{padding:0 14px;display:flex;flex-direction:column;gap:9px}
+.gc{background:var(--wh);border-radius:var(--r);border:1px solid rgba(0,0,0,.07);display:flex;align-items:center;gap:11px;padding:12px;cursor:pointer;transition:transform .18s,box-shadow .18s;box-shadow:var(--s1);position:relative;overflow:hidden;animation:fup .3s ease both}
+.gc::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--p)}
+.gc.locked::before{background:var(--t4)}
+.gc:not(.locked):hover{transform:translateY(-2px);box-shadow:var(--s2)}
+.gc:not(.locked):active{transform:scale(.985)}
+.gc.locked{opacity:.6;cursor:default}
+.gi{width:50px;height:50px;border-radius:13px;background:var(--pu);display:flex;align-items:center;justify-content:center;font-size:25px;flex-shrink:0}
+.ginfo{flex:1;min-width:0}
+.gn{font-size:12px;font-weight:800;color:var(--t1);letter-spacing:.3px;text-transform:uppercase}
+.gm{font-size:11px;color:var(--t3);margin-top:2px}
+.gtags{display:flex;gap:5px;margin-top:5px;flex-wrap:wrap}
+.gtag{font-size:9px;font-weight:800;padding:2px 6px;border-radius:4px}
+.gtag.easy{background:#D4EDDA;color:#1C6B3A}
+.gtag.med{background:#FFF3CD;color:#856404}
+.gtag.hard{background:#F8D7DA;color:#721C24}
+.gtag.reg{background:var(--pp);color:var(--p)}
+.gr2{display:flex;flex-direction:column;align-items:flex-end;gap:3px;flex-shrink:0}
+.gpts{font-size:14px;font-weight:800;color:var(--gd)}
+/* PHOTO UPLOAD */
+.pw{padding:0 14px 14px}
+.pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:8px}
+.psl{aspect-ratio:1;border-radius:13px;border:2px dashed rgba(0,0,0,.13);background:rgba(0,0,0,.02);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;cursor:pointer;transition:all .18s;overflow:hidden;position:relative}
+.psl:hover{background:rgba(45,90,27,.05);border-color:var(--pl)}
+.psl.filled{border:2px solid var(--p)}
+.psl img{width:100%;height:100%;object-fit:cover;position:absolute;inset:0}
+.pov{position:absolute;inset:0;background:rgba(0,0,0,.46);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .18s}
+.psl.filled:hover .pov{opacity:1}
+.spp{font-size:20px;color:var(--t4)}
+.spl{font-size:9px;color:var(--t4);font-weight:700;letter-spacing:.5px;text-transform:uppercase}
+.ubtn{width:100%;background:var(--p);color:#fff;border:none;border-radius:13px;padding:14px;font-family:'Inter',sans-serif;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:all .18s;box-shadow:0 3px 12px rgba(45,90,27,.22)}
+.ubtn:hover{background:var(--p2)}
+.ubtn:active{transform:scale(.98)}
+.gsel-wrap{padding:0 14px 10px}
+.gsel-lbl{font-size:10px;font-weight:700;color:var(--t3);letter-spacing:.5px;text-transform:uppercase;margin-bottom:5px}
+.gsel{width:100%;padding:10px 13px;border:1.5px solid rgba(0,0,0,.1);border-radius:11px;font-family:'Inter',sans-serif;font-size:13px;background:var(--wh);color:var(--t1);outline:none;-webkit-appearance:none;appearance:none;cursor:pointer;box-shadow:var(--s1)}
+.gsel:focus{border-color:var(--p)}
+/* MODAL */
+.mbg{position:fixed;inset:0;background:rgba(0,0,0,.56);display:flex;align-items:flex-end;justify-content:center;z-index:200;opacity:0;pointer-events:none;transition:opacity .24s}
+.mbg.open{opacity:1;pointer-events:all}
+.ms{background:var(--cr);border-radius:22px 22px 0 0;width:100%;max-width:430px;padding-bottom:calc(env(safe-area-inset-bottom,0px)+16px);transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);max-height:88vh;overflow-y:auto}
+.mbg.open .ms{transform:translateY(0)}
+.mh{width:36px;height:4px;background:var(--cr3);border-radius:2px;margin:11px auto 0}
+.mc{padding:18px}
+.mt{font-family:'Playfair Display',serif;font-size:18px;color:var(--t1);margin-bottom:3px}
+.mst{font-size:13px;color:var(--t3);margin-bottom:14px;line-height:1.5}
+.dots{display:flex;align-items:center;gap:10px;padding:13px;background:var(--pu);border-radius:12px;border:1px solid rgba(45,90,27,.1);margin-bottom:13px}
+.d{width:7px;height:7px;border-radius:50%;background:var(--p);animation:bl 1.2s infinite}
+.d:nth-child(2){animation-delay:.2s}.d:nth-child(3){animation-delay:.4s}
+@keyframes bl{0%,100%{opacity:.2;transform:scale(.6)}50%{opacity:1;transform:scale(1.2)}}
+.ar{padding:14px;border-radius:12px;margin-bottom:13px;border:1px solid;display:none}
+.ar.ok{background:#EFF9EF;border-color:#7EC87E}
+.ar.fail{background:var(--errp);border-color:#E8A09A}
+.ar-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.abadge{padding:3px 9px;border-radius:20px;font-size:10px;font-weight:800}
+.abadge.ok{background:#D4EDDA;color:#1C6B3A}
+.abadge.fail{background:#F8D7DA;color:#7A1C24}
+.arp{font-size:22px;font-weight:800;color:var(--gd)}
+.art{font-size:13px;color:var(--t2);line-height:1.65;white-space:pre-line}
+.mb{width:100%;padding:13px;border:none;border-radius:12px;font-family:'Inter',sans-serif;font-size:14px;font-weight:700;cursor:pointer;transition:all .18s;margin-bottom:8px}
+.mb.pri{background:var(--gd2);color:#1a1a1a}
+.mb.pri:hover{background:var(--gd3)}
+.mb.gho{background:transparent;color:var(--t3);border:1px solid rgba(0,0,0,.09)}
+/* DETAIL */
+.dh{padding:50px 18px 20px;flex-shrink:0}
+.dbtn{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.14);border:none;color:#fff;padding:6px 12px;border-radius:9px;font-family:'Inter',sans-serif;font-size:12px;font-weight:600;cursor:pointer;margin-bottom:13px;transition:background .18s}
+.dbtn:hover{background:rgba(255,255,255,.24)}
+.diw{width:68px;height:68px;background:rgba(255,255,255,.13);border-radius:18px;display:flex;align-items:center;justify-content:center;font-size:35px;margin-bottom:12px}
+.dn{font-family:'Playfair Display',serif;font-size:21px;color:#fff;text-transform:uppercase}
+.ds{font-size:12px;color:rgba(255,255,255,.6);margin-top:3px}
+.dtags{display:flex;gap:7px;margin-top:9px;flex-wrap:wrap}
+.dtag{padding:4px 11px;border-radius:20px;font-size:11px;font-weight:700}
+.db{padding:13px}
+.dc{background:var(--wh);border-radius:var(--r);border:1px solid rgba(0,0,0,.07);padding:14px;margin-bottom:11px;box-shadow:var(--s1)}
+.dct{font-size:10px;font-weight:800;color:var(--p3);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:8px}
+.dcd{font-size:13px;color:var(--t2);line-height:1.75}
+.ci{display:flex;gap:9px;margin-bottom:9px;align-items:flex-start}
+.ci:last-child{margin-bottom:0}
+.cn{width:24px;height:24px;border-radius:50%;background:var(--pp);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:var(--p);flex-shrink:0;margin-top:1px}
+.ct{font-size:13px;color:var(--t2);line-height:1.55}
+.pg2{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.pb{background:var(--pu);border-radius:11px;padding:11px 6px;text-align:center}
+.pbl{font-size:10px;color:var(--t3);margin-bottom:3px}
+.pbv{font-size:17px;font-weight:800;color:var(--gd)}
+.jb{width:100%;background:var(--gd2);color:#1a1a1a;border:none;border-radius:14px;padding:15px;font-family:'Inter',sans-serif;font-size:15px;font-weight:800;cursor:pointer;margin-top:5px;transition:all .18s;box-shadow:0 4px 14px rgba(184,150,62,.26)}
+.jb:hover{background:var(--gd3);transform:translateY(-1px)}
+.howto{background:var(--pp);border:1px solid rgba(45,90,27,.13);border-radius:12px;padding:13px;margin-bottom:11px}
+.howto-t{font-size:10px;font-weight:800;color:var(--p);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:7px}
+.howto-b{font-size:13px;color:var(--t2);line-height:1.72;white-space:pre-line}
+/* LEADERBOARD */
+.lbh{background:var(--p);padding:50px 18px 16px;text-align:center;flex-shrink:0}
+.lbt{font-family:'Playfair Display',serif;font-size:20px;color:#fff;margin-bottom:2px}
+.lbs{font-size:11px;color:rgba(255,255,255,.5)}
+.pod{background:var(--p2);display:flex;align-items:flex-end;justify-content:center;gap:14px;padding:16px 18px 22px;flex-shrink:0;min-height:110px}
+.pi{display:flex;flex-direction:column;align-items:center;gap:4px}
+.pav{border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:800;border:2px solid rgba(255,255,255,.2);color:#fff}
+.p1 .pav{width:62px;height:62px;font-size:18px;background:var(--gd2);border-color:var(--gd3)}
+.p2 .pav{width:50px;height:50px;font-size:14px;background:var(--pl)}
+.p3 .pav{width:44px;height:44px;font-size:13px;background:#9C8070}
+.pnm{font-size:11px;color:rgba(255,255,255,.85);font-weight:600;max-width:70px;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.psc{font-size:11px;font-weight:800}
+.p1 .psc{color:var(--gd3)}.p2 .psc,.p3 .psc{color:rgba(255,255,255,.7)}
+.lbrow{display:flex;align-items:center;gap:10px;padding:11px 12px;border-radius:13px;margin-bottom:7px;background:var(--wh);border:1px solid rgba(0,0,0,.07);box-shadow:var(--s1);transition:transform .13s}
+.lbrow:hover{transform:translateX(3px)}
+.lbrow.me{border-color:var(--p);background:var(--pp)}
+.lbr{font-size:12px;font-weight:800;color:var(--t4);width:20px;text-align:center}
+.lbav{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;flex-shrink:0}
+.lbi{flex:1}
+.lbn{font-size:13px;font-weight:600;color:var(--t1)}
+.lbg{font-size:11px;color:var(--t3)}
+.lbye{font-size:9px;background:rgba(45,90,27,.11);color:var(--p);padding:2px 6px;border-radius:4px;font-weight:800;margin-left:5px}
+.lbsc{font-size:14px;font-weight:800;color:var(--gd)}
+.lb-msg{text-align:center;padding:28px 18px;color:var(--t3);font-size:13px;line-height:1.6}
+/* PROFILE */
+.prh{background:var(--p);padding:50px 18px 22px;flex-shrink:0}
+.prav-wrap{display:flex;align-items:center;gap:14px}
+.prav{width:64px;height:64px;border-radius:50%;background:var(--gd2);border:3px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:800;color:#1a1a1a;flex-shrink:0}
+.prn{font-family:'Playfair Display',serif;font-size:18px;color:#fff}
+.prs{font-size:11px;color:rgba(255,255,255,.5);margin-top:2px}
+.prt{background:rgba(255,255,255,.13);color:#fff;font-size:11px;font-weight:700;padding:3px 9px;border-radius:6px;display:inline-block;margin-top:6px}
+.sg{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 14px}
+.sb2{background:var(--wh);border-radius:13px;padding:14px;border:1px solid rgba(0,0,0,.07);box-shadow:var(--s1);text-align:center}
+.sv{font-size:24px;font-weight:800}
+.sl2{font-size:11px;color:var(--t3);margin-top:2px}
+.bdr{padding:0 14px 10px}
+.brow{display:flex;gap:8px;flex-wrap:wrap}
+.bc{background:var(--wh);border:1px solid rgba(0,0,0,.08);border-radius:11px;padding:10px 12px;font-size:21px;box-shadow:var(--s1);cursor:default;transition:transform .14s}
+.bc:hover{transform:scale(1.1)}
+.bc.lk{opacity:.25;filter:grayscale(1)}
+/* SETTINGS */
+.ss{padding:0 14px;margin-bottom:7px}
+.slbl{font-size:10px;font-weight:800;letter-spacing:1.5px;color:var(--t4);text-transform:uppercase;padding:13px 0 7px}
+.srow{background:var(--wh);border-radius:var(--r);border:1px solid rgba(0,0,0,.07);box-shadow:var(--s1);overflow:hidden}
+.sitem{display:flex;align-items:center;gap:12px;padding:13px 15px;cursor:pointer;transition:background .13s;border-bottom:1px solid rgba(0,0,0,.05)}
+.sitem:last-child{border-bottom:none}
+.sitem:hover{background:rgba(0,0,0,.02)}
+.sico{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0}
+.stxt{flex:1}
+.stitle{font-size:14px;font-weight:600;color:var(--t1)}
+.ssub{font-size:11px;color:var(--t3);margin-top:1px}
+.sarr{font-size:16px;color:var(--t4)}
+.sbadge{font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px}
+/* EDIT FIELDS */
+.efw{margin-bottom:12px}
+.elbl{font-size:10px;font-weight:700;color:var(--t3);letter-spacing:.6px;text-transform:uppercase;margin-bottom:4px}
+.einput{width:100%;padding:11px 13px;border:1.5px solid rgba(0,0,0,.1);border-radius:11px;font-family:'Inter',sans-serif;font-size:14px;background:var(--wh);color:var(--t1);outline:none;transition:border-color .18s;-webkit-appearance:none;appearance:none}
+.einput:focus{border-color:var(--p)}
+.emsg{border-radius:9px;padding:9px 12px;font-size:12px;margin-bottom:11px;display:none}
+.emsg.show{display:block}
+.emsg.err{background:var(--errp);border:1px solid rgba(192,57,43,.2);color:var(--err)}
+.emsg.ok{background:var(--pp);border:1px solid rgba(45,90,27,.2);color:var(--p)}
+/* LIBRARY */
+.lc{margin:0 14px 12px;border-radius:var(--r);overflow:hidden;box-shadow:var(--s1)}
+.lch{padding:16px;display:flex;align-items:center;gap:12px}
+.lct{font-family:'Playfair Display',serif;font-size:15px;color:#fff}
+.lcsu{font-size:11px;color:rgba(255,255,255,.6);margin-top:2px}
+.lcb{background:var(--wh);padding:12px 14px;font-size:13px;color:var(--t2);line-height:1.78}
+/* TOAST / CONFETTI */
+#toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(14px);background:var(--t1);color:#fff;padding:10px 18px;border-radius:20px;font-size:13px;font-weight:600;opacity:0;transition:all .24s;pointer-events:none;z-index:500;white-space:nowrap;max-width:90vw;text-align:center;box-shadow:0 4px 16px rgba(0,0,0,.2)}
+.cf{position:fixed;pointer-events:none;z-index:600;animation:cff 1.6s ease-in forwards}
+@keyframes cff{0%{transform:translateY(-10px) rotate(0deg);opacity:1}100%{transform:translateY(105vh) rotate(820deg);opacity:0}}
+@keyframes fup{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+/* CONFIRM */
+.cover{position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:400;display:flex;align-items:center;justify-content:center;padding:20px;opacity:0;pointer-events:none;transition:opacity .18s}
+.cover.open{opacity:1;pointer-events:all}
+.cbox{background:var(--wh);border-radius:20px;padding:22px;width:100%;max-width:310px;box-shadow:0 8px 40px rgba(0,0,0,.15)}
+.ctitle{font-family:'Playfair Display',serif;font-size:17px;color:var(--t1);margin-bottom:7px}
+.ctxt{font-size:13px;color:var(--t3);line-height:1.6;margin-bottom:18px}
+.cbtns{display:flex;gap:9px}
+.cbtns button{flex:1;padding:11px;border:none;border-radius:10px;font-family:'Inter',sans-serif;font-size:13px;font-weight:700;cursor:pointer;transition:all .18s}
+.ccancel{background:var(--cr2);color:var(--t2)}
+.cok{background:var(--err);color:#fff}
+input[type=file]{display:none}
+</style>
+</head>
+<body>
+<div id="app">
+
+<!-- AUTH SCREEN -->
+<div class="aw" id="aw">
+  <div class="a-logorow"><div class="a-logo">🌍</div><div class="a-name">HeritageGames</div></div>
+  <div class="a-tag" id="aTag">Discover and play traditional games from cultures around the world</div>
+  <div class="langrow" id="langrow">
+    <button class="lbtn on" onclick="setLang('en',this)">🇬🇧 EN</button>
+    <button class="lbtn" onclick="setLang('vi',this)">🇻🇳 VI</button>
+    <button class="lbtn" onclick="setLang('zh',this)">🇨🇳 ZH</button>
+    <button class="lbtn" onclick="setLang('ja',this)">🇯🇵 JA</button>
+    <button class="lbtn" onclick="setLang('ko',this)">🇰🇷 KO</button>
+    <button class="lbtn" onclick="setLang('fr',this)">🇫🇷 FR</button>
+    <button class="lbtn" onclick="setLang('es',this)">🇪🇸 ES</button>
+  </div>
+  <div class="a-card">
+    <div class="a-tabs">
+      <div class="a-tab on" id="tab-si" onclick="switchTab('si')">Sign In</div>
+      <div class="a-tab" id="tab-su" onclick="switchTab('su')">Create Account</div>
+    </div>
+    <div id="aerr" class="amsg err"></div>
+    <div id="aok" class="amsg ok"></div>
+    <div id="form-si">
+      <div class="aflbl" id="lEmail">EMAIL</div>
+      <input class="af" id="siEmail" type="email" placeholder="you@email.com">
+      <div class="aflbl" id="lPass">PASSWORD</div>
+      <input class="af" id="siPass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doSignIn()">
+      <button class="abtn" id="siBtnEl" onclick="doSignIn()">Sign In</button>
+      <div class="a-fgt"><a onclick="showForgot()" id="lForgot">Forgot password?</a></div>
+    </div>
+    <div id="form-su" style="display:none">
+      <div class="aflbl" id="lName">DISPLAY NAME</div>
+      <input class="af" id="suName" type="text" placeholder="Your name..." maxlength="30">
+      <div class="aflbl" id="lCountry">COUNTRY / REGION</div>
+      <select class="af" id="suCountry">
+        <option value="">-- Select --</option>
+        <optgroup label="🌏 Asia"><option>Vietnam</option><option>Japan</option><option>South Korea</option><option>China</option><option>India</option><option>Thailand</option><option>Indonesia</option><option>Philippines</option><option>Malaysia</option><option>Singapore</option><option>Cambodia</option><option>Myanmar</option></optgroup>
+        <optgroup label="🌍 Africa"><option>Nigeria</option><option>Ghana</option><option>Kenya</option><option>South Africa</option><option>Egypt</option><option>Ethiopia</option><option>Morocco</option><option>Tanzania</option></optgroup>
+        <optgroup label="🌎 Americas"><option>USA</option><option>Brazil</option><option>Mexico</option><option>Colombia</option><option>Argentina</option><option>Canada</option><option>Peru</option></optgroup>
+        <optgroup label="🌍 Europe"><option>France</option><option>Germany</option><option>UK</option><option>Spain</option><option>Italy</option><option>Portugal</option><option>Netherlands</option><option>Poland</option></optgroup>
+        <optgroup label="🌏 Other"><option>Australia</option><option>New Zealand</option><option>Saudi Arabia</option><option>UAE</option><option>Turkey</option><option>Iran</option></optgroup>
+      </select>
+      <div class="aflbl" id="lPassMin">PASSWORD (MIN. 6 CHARACTERS)</div>
+      <input class="af" id="suPass" type="password" placeholder="••••••••" onkeydown="if(event.key==='Enter')doSignUp()">
+      <button class="abtn" id="suBtnEl" onclick="doSignUp()">Create Account</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="mainapp" style="display:none;flex:1;flex-direction:column;height:100dvh">
+
+<!-- HOME -->
+<div class="screen active" id="screen-home">
+  <div class="tb">
+    <div class="tb-brand"><div class="tb-logo">🌍</div><div class="tb-title">HeritageGames</div></div>
+    <div class="tb-av" id="hav" onclick="nav('profile')">?</div>
+  </div>
+  <div class="sb">
+    <div class="pc">
+      <div class="pc-top"><span class="pc-lbl" id="lProgress">Cultural Progress</span><div class="pchip">🏛️ <span id="hpts">0</span> <span id="lPts">PTS</span></div></div>
+      <div class="pbar"><div class="pbarfill" id="hbar" style="width:0%"></div></div>
+      <div class="psub" id="hsub">0 games played</div>
+    </div>
+    <div class="sh" id="lExplore">Explore Games By Region</div>
+    <div class="rtabs" id="rtabs"></div>
+    <div class="gl" id="gamelist"></div>
+    <div class="sh" id="lSubmit">Submit Your Photos</div>
+    <div class="gsel-wrap">
+      <div class="gsel-lbl" id="lSelGame">Which game did you play?</div>
+      <select class="gsel" id="gamesel"><option value="">-- Select game --</option></select>
+    </div>
+    <div class="pw">
+      <div class="pgrid">
+        <div class="psl" id="ps0" onclick="pickPhoto(0)"><div class="spp">+</div><div class="spl" id="lPh1">PHOTO 1</div></div>
+        <div class="psl" id="ps1" onclick="pickPhoto(1)"><div class="spp">+</div><div class="spl" id="lPh2">PHOTO 2</div></div>
+        <div class="psl" id="ps2" onclick="pickPhoto(2)"><div class="spp">+</div><div class="spl" id="lPh3">PHOTO 3</div></div>
+      </div>
+      <button class="ubtn" onclick="submitPhotos()">🌿 <span id="lAISubmit">Submit for AI Review</span></button>
+    </div>
+    <div style="height:14px"></div>
+  </div>
+  <div class="bn">
+    <div class="nt on" onclick="nav('home')"><svg viewBox="0 0 24 24"><path d="M3 12l9-9 9 9"/><path d="M9 21V12h6v9"/></svg><span id="lnHome">Explore</span></div>
+    <div class="nt" onclick="nav('library')"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg><span id="lnLib">Library</span></div>
+    <div class="nt" onclick="nav('leaderboard')"><svg viewBox="0 0 24 24"><rect x="18" y="3" width="4" height="18"/><rect x="10" y="8" width="4" height="13"/><rect x="2" y="13" width="4" height="8"/></svg><span id="lnRank">Rankings</span></div>
+    <div class="nt" onclick="nav('profile')"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg><span id="lnProf">Profile</span></div>
+  </div>
+</div>
+
+<!-- LEADERBOARD -->
+<div class="screen" id="screen-leaderboard">
+  <div class="lbh"><div class="lbt" id="lRankTitle">Global Rankings</div><div class="lbs" id="lbUpdated">Real players · Live</div></div>
+  <div class="pod" id="podium"><div class="lb-msg">Loading...</div></div>
+  <div class="sb"><div style="padding:10px 14px" id="lblist"><div class="lb-msg">Connecting...</div></div></div>
+  <div class="bn">
+    <div class="nt" onclick="nav('home')"><svg viewBox="0 0 24 24"><path d="M3 12l9-9 9 9"/><path d="M9 21V12h6v9"/></svg><span>Explore</span></div>
+    <div class="nt" onclick="nav('library')"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg><span>Library</span></div>
+    <div class="nt on"><svg viewBox="0 0 24 24"><rect x="18" y="3" width="4" height="18"/><rect x="10" y="8" width="4" height="13"/><rect x="2" y="13" width="4" height="8"/></svg><span>Rankings</span></div>
+    <div class="nt" onclick="nav('profile')"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg><span>Profile</span></div>
+  </div>
+</div>
+
+<!-- LIBRARY -->
+<div class="screen" id="screen-library">
+  <div class="tb"><div class="tb-brand"><div class="tb-logo">📖</div><div class="tb-title" id="lLibTitle">Cultural Library</div></div></div>
+  <div class="sb" style="padding-top:12px" id="libcontent"></div>
+  <div class="bn">
+    <div class="nt" onclick="nav('home')"><svg viewBox="0 0 24 24"><path d="M3 12l9-9 9 9"/><path d="M9 21V12h6v9"/></svg><span>Explore</span></div>
+    <div class="nt on"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg><span>Library</span></div>
+    <div class="nt" onclick="nav('leaderboard')"><svg viewBox="0 0 24 24"><rect x="18" y="3" width="4" height="18"/><rect x="10" y="8" width="4" height="13"/><rect x="2" y="13" width="4" height="8"/></svg><span>Rankings</span></div>
+    <div class="nt" onclick="nav('profile')"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg><span>Profile</span></div>
+  </div>
+</div>
+
+<!-- PROFILE -->
+<div class="screen" id="screen-profile">
+  <div class="prh">
+    <div class="prav-wrap">
+      <div class="prav" id="prav">?</div>
+      <div><div class="prn" id="prnm">Player</div><div class="prs" id="prsi">World</div><div class="prt" id="prtier">🌱 Newcomer</div></div>
+    </div>
+  </div>
+  <div class="sb">
+    <div class="sg">
+      <div class="sb2"><div class="sv" id="sppts" style="color:var(--gd)">0</div><div class="sl2" id="lTotPts">Total Points</div></div>
+      <div class="sb2"><div class="sv" id="spgm" style="color:var(--p)">0</div><div class="sl2" id="lGames">Games</div></div>
+      <div class="sb2"><div class="sv" id="sprk" style="color:var(--gd)">#–</div><div class="sl2" id="lRank">Global Rank</div></div>
+      <div class="sb2"><div class="sv" id="spph" style="color:var(--err)">0</div><div class="sl2" id="lPhotos">Photos</div></div>
+    </div>
+    <div class="sh" id="lBadges">Badges</div>
+    <div class="bdr"><div class="brow" id="bdgrow"></div></div>
+    <div class="ss"><div class="slbl" id="lLangSec">Language</div>
+      <div class="srow"><div class="sitem" onclick="openLangPicker()">
+        <div class="sico" style="background:#EFF6E8">🌐</div>
+        <div class="stxt"><div class="stitle" id="lAppLang">App Language</div><div class="ssub" id="curLangDisp">English</div></div>
+        <div class="sarr">›</div>
+      </div></div>
+    </div>
+    <div class="ss"><div class="slbl" id="lAccount">Account</div>
+      <div class="srow">
+        <div class="sitem" onclick="openEditProfile()">
+          <div class="sico" style="background:#EFF6E8">✏️</div>
+          <div class="stxt"><div class="stitle" id="lEditProf">Edit Profile</div><div class="ssub" id="lEditProfSub">Name and country</div></div>
+          <div class="sarr">›</div>
+        </div>
+        <div class="sitem" onclick="openChangePw()">
+          <div class="sico" style="background:#FBF5DC">🔑</div>
+          <div class="stxt"><div class="stitle" id="lChangePw">Change Password</div><div class="ssub" id="lChangePwSub">Update your login password</div></div>
+          <div class="sarr">›</div>
+        </div>
+        <div class="sitem">
+          <div class="sico" style="background:#E8F0FB">📧</div>
+          <div class="stxt"><div class="stitle">Email</div><div class="ssub" id="siEmailDisp">—</div></div>
+          <div class="sbadge" style="background:var(--pp);color:var(--p)" id="lVerified">Verified</div>
+        </div>
+      </div>
+    </div>
+    <div class="ss"><div class="slbl" id="lAboutSec">About</div>
+      <div class="srow"><div class="sitem" onclick="openModal('mAbout')">
+        <div class="sico" style="background:var(--pu)">ℹ️</div>
+        <div class="stxt"><div class="stitle" id="lAboutApp">About HeritageGames</div><div class="ssub" id="lVersion">Version 1.0 · DFC Project</div></div>
+        <div class="sarr">›</div>
+      </div></div>
+    </div>
+    <div class="ss"><div class="slbl" id="lSessionSec">Session</div>
+      <div class="srow"><div class="sitem" onclick="doSignOut()">
+        <div class="sico" style="background:#FFF0EE">🚪</div>
+        <div class="stxt"><div class="stitle" style="color:var(--err)" id="lSignOut">Sign Out</div><div class="ssub" id="lSignOutSub">Exit this account</div></div>
+      </div></div>
+    </div>
+    <div class="ss"><div class="slbl" id="lDanger">Danger Zone</div>
+      <div class="srow"><div class="sitem" onclick="confirmDel()">
+        <div class="sico" style="background:var(--errp)">🗑️</div>
+        <div class="stxt"><div class="stitle" style="color:var(--err)" id="lDelAcc">Delete Account</div><div class="ssub" id="lDelAccSub">Permanently erase all data</div></div>
+        <div class="sarr" style="color:var(--err)">›</div>
+      </div></div>
+    </div>
+    <div style="height:18px"></div>
+  </div>
+  <div class="bn">
+    <div class="nt" onclick="nav('home')"><svg viewBox="0 0 24 24"><path d="M3 12l9-9 9 9"/><path d="M9 21V12h6v9"/></svg><span>Explore</span></div>
+    <div class="nt" onclick="nav('library')"><svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg><span>Library</span></div>
+    <div class="nt" onclick="nav('leaderboard')"><svg viewBox="0 0 24 24"><rect x="18" y="3" width="4" height="18"/><rect x="10" y="8" width="4" height="13"/><rect x="2" y="13" width="4" height="8"/></svg><span>Rankings</span></div>
+    <div class="nt on"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg><span>Profile</span></div>
+  </div>
+</div>
+
+<!-- DETAIL -->
+<div class="screen" id="screen-detail">
+  <div class="dh" id="dhead"><button class="dbtn" onclick="nav('home')">← <span id="lBack">Back</span></button>
+    <div class="diw" id="dicon">🎮</div><div class="dn" id="dname">Game</div>
+    <div class="ds" id="dsub"></div><div class="dtags" id="dtags"></div></div>
+  <div class="sb"><div class="db">
+    <div class="howto" id="dhowto" style="display:none"><div class="howto-t" id="lHowTo">📖 HOW TO PLAY</div><div class="howto-b" id="dhowtotext"></div></div>
+    <div class="dc"><div class="dct" id="lAboutGame">ABOUT THIS GAME</div><div class="dcd" id="ddesc"></div></div>
+    <div class="dc"><div class="dct" id="lChallenges">CHALLENGES TO EARN POINTS</div><div id="dchal"></div></div>
+    <div class="dc"><div class="dct" id="lPtsBreak">POINTS BREAKDOWN</div><div class="pg2">
+      <div class="pb"><div class="pbl" id="lCompletion">Completion</div><div class="pbv" id="dp1">+0</div></div>
+      <div class="pb"><div class="pbl" id="lPerPhoto">Per photo</div><div class="pbv">+50</div></div>
+      <div class="pb"><div class="pbl">AI Bonus</div><div class="pbv">+20~80</div></div>
+    </div></div>
+    <button class="jb" id="jbtn" onclick="joinFromDetail()">🌿 <span id="lStartChall">Start Challenge</span></button>
+    <div style="height:14px"></div>
+  </div></div>
+</div>
+</div><!-- /mainapp -->
+
+<!-- MODALS -->
+<div class="mbg" id="mAI"><div class="ms"><div class="mh"></div><div class="mc">
+  <div class="mt" id="aiTitle">AI Review...</div><div class="mst" id="aiSub">Checking your photos</div>
+  <div class="dots" id="aiDots"><div class="d"></div><div class="d"></div><div class="d"></div><span style="font-size:13px;color:var(--t2);margin-left:6px" id="lAnalysing">Analysing...</span></div>
+  <div class="ar" id="ares"><div class="ar-top"><div class="abadge" id="abadge">RESULT</div><div class="arp" id="apts"></div></div><div class="art" id="atxt"></div></div>
+  <button class="mb pri" id="mok" style="display:none" onclick="claimPts()">✓ <span id="lClaim">Claim Points!</span></button>
+  <button class="mb gho" onclick="closeModal('mAI')" id="lClose1">Close</button>
+</div></div></div>
+
+<div class="mbg" id="mEditProf"><div class="ms"><div class="mh"></div><div class="mc">
+  <div class="mt" id="lEditProf2">Edit Profile</div><div class="mst" id="lEditProfDesc">Update your name and country</div>
+  <div class="efw"><div class="elbl" id="lDispName">DISPLAY NAME</div><input class="einput" id="epName" type="text" maxlength="30"></div>
+  <div class="efw"><div class="elbl" id="lCountry2">COUNTRY</div>
+    <select class="einput" id="epCountry">
+      <option value="">-- Select --</option>
+      <optgroup label="🌏 Asia"><option>Vietnam</option><option>Japan</option><option>South Korea</option><option>China</option><option>India</option><option>Thailand</option><option>Indonesia</option><option>Philippines</option><option>Malaysia</option><option>Singapore</option><option>Cambodia</option><option>Myanmar</option></optgroup>
+      <optgroup label="🌍 Africa"><option>Nigeria</option><option>Ghana</option><option>Kenya</option><option>South Africa</option><option>Egypt</option><option>Ethiopia</option><option>Morocco</option><option>Tanzania</option></optgroup>
+      <optgroup label="🌎 Americas"><option>USA</option><option>Brazil</option><option>Mexico</option><option>Colombia</option><option>Argentina</option><option>Canada</option><option>Peru</option></optgroup>
+      <optgroup label="🌍 Europe"><option>France</option><option>Germany</option><option>UK</option><option>Spain</option><option>Italy</option><option>Portugal</option><option>Netherlands</option><option>Poland</option></optgroup>
+      <optgroup label="🌏 Other"><option>Australia</option><option>New Zealand</option><option>Saudi Arabia</option><option>UAE</option><option>Turkey</option><option>Iran</option></optgroup>
+    </select>
+  </div>
+  <button class="mb pri" onclick="saveProfile()" id="lSave">Save Changes</button>
+  <button class="mb gho" onclick="closeModal('mEditProf')" id="lCancel1">Cancel</button>
+</div></div></div>
+
+<div class="mbg" id="mChangePw"><div class="ms"><div class="mh"></div><div class="mc">
+  <div class="mt" id="lChangePw2">Change Password</div><div class="mst" id="lChangePwDesc">Enter a new password for your account</div>
+  <div id="pwMsg" class="emsg"></div>
+  <div class="efw"><div class="elbl" id="lNewPw">NEW PASSWORD</div><input class="einput" id="pwNew" type="password"></div>
+  <div class="efw"><div class="elbl" id="lConfPw">CONFIRM NEW PASSWORD</div><input class="einput" id="pwConf" type="password"></div>
+  <button class="mb pri" onclick="doChangePw()" id="lChangePwBtn">Change Password</button>
+  <button class="mb gho" onclick="closeModal('mChangePw')" id="lCancel2">Cancel</button>
+</div></div></div>
+
+<div class="mbg" id="mLang"><div class="ms"><div class="mh"></div><div class="mc">
+  <div class="mt" id="lSelLang">Select Language</div><div class="mst" id="lSelLangSub">Choose your preferred language</div>
+  <div id="langPickerList"></div>
+  <button class="mb gho" onclick="closeModal('mLang')" id="lClose2">Close</button>
+</div></div></div>
+
+<div class="mbg" id="mAbout"><div class="ms"><div class="mh"></div><div class="mc">
+  <div style="text-align:center;padding:8px 0 16px"><div style="font-size:42px;margin-bottom:10px">🌍</div>
+  <div class="mt" style="text-align:center">HeritageGames</div>
+  <div style="font-size:12px;color:var(--t3);margin-top:5px" id="lVersion2">Version 1.0 · DFC Project</div></div>
+  <div class="dc"><div class="dct" id="lAboutProj">ABOUT THE PROJECT</div>
+  <div class="dcd" id="lAboutTxt">HeritageGames was built as a DFC (Design For Change) project to preserve and celebrate traditional games from cultures around the world. Every photo shared keeps these traditions alive.</div></div>
+  <div class="dc"><div class="dct" id="lTech">TECHNOLOGY</div>
+  <div class="dcd" id="lTechTxt">Powered by Claude AI Vision for photo verification, Supabase for real-time global leaderboard, and GitHub Pages for hosting.</div></div>
+  <button class="mb gho" onclick="closeModal('mAbout')" id="lClose3">Close</button>
+</div></div></div>
+
+<div class="cover" id="coverDel">
+  <div class="cbox">
+    <div class="ctitle" id="lDelTitle">Delete Account?</div>
+    <div class="ctxt" id="lDelWarn">All your points and data will be permanently erased. This cannot be undone.</div>
+    <div class="cbtns">
+      <button class="ccancel" onclick="closeCover()" id="lCancel3">Cancel</button>
+      <button class="cok" onclick="doDeleteAccount()" id="lDelNow">Delete Now</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<input type="file" id="finput" accept="image/*">
+
+<script>
+const {createClient}=supabase;
+const SB=createClient('https://pudsnbizkihwxpeyasis.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1ZHNuYml6a2lod3hwZXlhc2lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3NDE3ODcsImV4cCI6MjA5NjMxNzc4N30.KR8b3qSbRyXxRce9x8UUBK0oGd7bje7qZ0BT4xmKu6A');
+
+/* ── TRANSLATIONS ── */
+const T={
+en:{tagline:'Discover and play traditional games from cultures around the world',signIn:'Sign In',createAcc:'Create Account',email:'EMAIL',pass:'PASSWORD',passMin:'PASSWORD (MIN. 6 CHARACTERS)',forgotPw:'Forgot password?',dispName:'DISPLAY NAME',country:'COUNTRY / REGION',progress:'Cultural Progress',pts:'PTS',explore:'Explore Games By Region',submitPh:'Submit Your Photos',selGame:'Which game did you play?',aiSubmit:'Submit for AI Review',navExplore:'Explore',navLib:'Library',navRank:'Rankings',navProf:'Profile',rankTitle:'Global Rankings',libTitle:'Cultural Library',totPts:'Total Points',games:'Games',rank:'Global Rank',photos:'Photos',badges:'Badges',langSec:'Language',appLang:'App Language',account:'Account',editProf:'Edit Profile',editProfSub:'Name and country',changePw:'Change Password',changePwSub:'Update your login password',verified:'Verified',about:'About',aboutApp:'About HeritageGames',version:'Version 1.0 · DFC Project',session:'Session',signOut:'Sign Out',signOutSub:'Exit this account',danger:'Danger Zone',delAcc:'Delete Account',delAccSub:'Permanently erase all data',back:'Back',howTo:'📖 HOW TO PLAY',aboutGame:'ABOUT THIS GAME',challenges:'CHALLENGES TO EARN POINTS',ptsBreak:'POINTS BREAKDOWN',completion:'Completion',perPhoto:'Per photo',startChall:'Start Challenge',claim:'Claim Points!',close:'Close',editProfDesc:'Update your name and country',newPw:'NEW PASSWORD',confPw:'CONFIRM NEW PASSWORD',changePwDesc:'Enter a new password',selLang:'Select Language',selLangSub:'Choose your preferred language',aboutProj:'ABOUT THE PROJECT',aboutTxt:'HeritageGames was built as a DFC (Design For Change) project to preserve and celebrate traditional games from cultures around the world. Every photo shared keeps these traditions alive.',tech:'TECHNOLOGY',techTxt:'Powered by Claude AI Vision for photo verification, Supabase for real-time global leaderboard, and GitHub Pages for hosting.',delTitle:'Delete Account?',delWarn:'All your points and data will be permanently erased. This cannot be undone.',cancel:'Cancel',delNow:'Delete Now',save:'Save Changes',analysing:'Analysing...',ph1:'PHOTO 1',ph2:'PHOTO 2',ph3:'PHOTO 3',
+tiers:['🌱 Newcomer','🌿 Explorer','🎋 Culture Seeker','🏛️ Heritage Keeper','🌺 Global Ambassador']},
+vi:{tagline:'Khám phá và chơi các trò chơi dân gian truyền thống từ các nền văn hoá trên thế giới',signIn:'Đăng Nhập',createAcc:'Tạo Tài Khoản',email:'EMAIL',pass:'MẬT KHẨU',passMin:'MẬT KHẨU (ÍT NHẤT 6 KÝ TỰ)',forgotPw:'Quên mật khẩu?',dispName:'TÊN HIỂN THỊ',country:'QUỐC GIA / VÙNG',progress:'Tiến Trình Văn Hóa',pts:'ĐIỂM',explore:'Khám Phá Trò Chơi Theo Vùng',submitPh:'Gửi Ảnh Nhận Điểm',selGame:'Bạn đang gửi ảnh trò chơi nào?',aiSubmit:'Gửi Ảnh Để AI Xét Duyệt',navExplore:'Khám Phá',navLib:'Thư Viện',navRank:'Xếp Hạng',navProf:'Cá Nhân',rankTitle:'Bảng Xếp Hạng',libTitle:'Thư Viện Văn Hoá',totPts:'Tổng Điểm',games:'Trò Chơi',rank:'Hạng Thật',photos:'Ảnh',badges:'Huy Hiệu',langSec:'Ngôn Ngữ',appLang:'Ngôn Ngữ Ứng Dụng',account:'Tài Khoản',editProf:'Chỉnh Sửa Hồ Sơ',editProfSub:'Tên và quốc gia',changePw:'Đổi Mật Khẩu',changePwSub:'Cập nhật mật khẩu đăng nhập',verified:'Đã xác thực',about:'Thông Tin',aboutApp:'Về HeritageGames',version:'Phiên bản 1.0 · Dự án DFC',session:'Phiên',signOut:'Đăng Xuất',signOutSub:'Thoát khỏi tài khoản',danger:'Vùng Nguy Hiểm',delAcc:'Xoá Tài Khoản',delAccSub:'Xoá vĩnh viễn toàn bộ dữ liệu',back:'Quay Lại',howTo:'📖 CÁCH CHƠI NGAY',aboutGame:'VỀ TRÒ CHƠI',challenges:'THỬ THÁCH ĐỂ NHẬN ĐIỂM',ptsBreak:'ĐIỂM THƯỞNG',completion:'Hoàn thành',perPhoto:'Mỗi ảnh',startChall:'Bắt Đầu Thử Thách',claim:'Nhận Điểm!',close:'Đóng',editProfDesc:'Cập nhật tên và quốc gia',newPw:'MẬT KHẨU MỚI',confPw:'XÁC NHẬN MẬT KHẨU MỚI',changePwDesc:'Nhập mật khẩu mới',selLang:'Chọn Ngôn Ngữ',selLangSub:'Chọn ngôn ngữ bạn muốn dùng',aboutProj:'VỀ DỰ ÁN',aboutTxt:'HeritageGames được xây dựng như một dự án DFC nhằm bảo tồn và tôn vinh các trò chơi dân gian truyền thống từ các nền văn hoá trên khắp thế giới.',tech:'CÔNG NGHỆ',techTxt:'Sử dụng Claude AI Vision để xét duyệt ảnh, Supabase cho bảng xếp hạng thời gian thực, và GitHub Pages để hosting.',delTitle:'Xoá Tài Khoản?',delWarn:'Toàn bộ điểm số và dữ liệu sẽ bị xoá vĩnh viễn. Hành động này không thể hoàn tác.',cancel:'Huỷ',delNow:'Xoá Ngay',save:'Lưu Thay Đổi',analysing:'Đang phân tích...',ph1:'ẢNH 1',ph2:'ẢNH 2',ph3:'ẢNH 3',
+tiers:['🌱 Người Mới','🌿 Người Tìm Hiểu','🎋 Người Khám Phá','🏛️ Lữ Khách Văn Hoá','🌺 Đại Sứ Văn Hoá']},
+zh:{tagline:'探索并体验来自世界各地文化的传统游戏',signIn:'登录',createAcc:'创建账户',email:'邮箱',pass:'密码',passMin:'密码（至少6位）',forgotPw:'忘记密码？',dispName:'显示名称',country:'国家/地区',progress:'文化进程',pts:'分',explore:'按地区探索游戏',submitPh:'提交照片获积分',selGame:'你玩了哪个游戏？',aiSubmit:'提交AI审核',navExplore:'探索',navLib:'图书馆',navRank:'排行榜',navProf:'我的',rankTitle:'全球排行榜',libTitle:'文化图书馆',totPts:'总积分',games:'游戏',rank:'全球排名',photos:'照片',badges:'徽章',langSec:'语言',appLang:'应用语言',account:'账户',editProf:'编辑资料',editProfSub:'姓名和国家',changePw:'修改密码',changePwSub:'更新登录密码',verified:'已验证',about:'关于',aboutApp:'关于HeritageGames',version:'版本 1.0 · DFC项目',session:'会话',signOut:'退出登录',signOutSub:'退出此账户',danger:'危险区域',delAcc:'删除账户',delAccSub:'永久删除所有数据',back:'返回',howTo:'📖 怎么玩',aboutGame:'关于此游戏',challenges:'挑战获积分',ptsBreak:'积分明细',completion:'完成',perPhoto:'每张照片',startChall:'开始挑战',claim:'领取积分！',close:'关闭',editProfDesc:'更新显示名称和国家',newPw:'新密码',confPw:'确认新密码',changePwDesc:'输入新密码',selLang:'选择语言',selLangSub:'选择您偏好的语言',aboutProj:'关于项目',aboutTxt:'HeritageGames是一个DFC项目，旨在保护和传承世界各地的传统游戏。',tech:'技术',techTxt:'使用Claude AI视觉验证照片，Supabase实时全球排行榜，GitHub Pages托管。',delTitle:'删除账户？',delWarn:'您的所有积分和数据将被永久删除，此操作无法撤销。',cancel:'取消',delNow:'立即删除',save:'保存更改',analysing:'正在分析...',ph1:'照片1',ph2:'照片2',ph3:'照片3',
+tiers:['🌱 新手','🌿 探索者','🎋 文化寻访者','🏛️ 遗产守护者','🌺 全球大使']},
+ja:{tagline:'世界中の文化から伝統的なゲームを発見してプレイしよう',signIn:'ログイン',createAcc:'アカウント作成',email:'メール',pass:'パスワード',passMin:'パスワード（6文字以上）',forgotPw:'パスワードを忘れた？',dispName:'表示名',country:'国・地域',progress:'文化の進歩',pts:'ポイント',explore:'地域別ゲームを探す',submitPh:'写真を提出してポイント獲得',selGame:'どのゲームをプレイしましたか？',aiSubmit:'AIレビューに提出',navExplore:'探索',navLib:'ライブラリ',navRank:'ランキング',navProf:'プロフィール',rankTitle:'グローバルランキング',libTitle:'文化ライブラリ',totPts:'合計ポイント',games:'ゲーム数',rank:'グローバル順位',photos:'写真',badges:'バッジ',langSec:'言語',appLang:'アプリ言語',account:'アカウント',editProf:'プロフィール編集',editProfSub:'名前と国',changePw:'パスワード変更',changePwSub:'ログインパスワードを更新',verified:'認証済み',about:'について',aboutApp:'HeritageGamesについて',version:'バージョン 1.0 · DFCプロジェクト',session:'セッション',signOut:'サインアウト',signOutSub:'このアカウントを終了',danger:'危険ゾーン',delAcc:'アカウント削除',delAccSub:'すべてのデータを永久に削除',back:'戻る',howTo:'📖 プレイ方法',aboutGame:'このゲームについて',challenges:'ポイントを獲得するチャレンジ',ptsBreak:'ポイント内訳',completion:'完了',perPhoto:'写真1枚',startChall:'チャレンジを始める',claim:'ポイントを獲得！',close:'閉じる',editProfDesc:'表示名と国を更新',newPw:'新しいパスワード',confPw:'新しいパスワードを確認',changePwDesc:'新しいパスワードを入力',selLang:'言語を選択',selLangSub:'希望の言語を選択してください',aboutProj:'プロジェクトについて',aboutTxt:'HeritageGamesは、世界中の伝統的なゲームを保存・祝うDFCプロジェクトです。',tech:'テクノロジー',techTxt:'Claude AIビジョンで写真確認、Supabaseでリアルタイムランキング、GitHub Pagesでホスティング。',delTitle:'アカウントを削除？',delWarn:'すべてのポイントとデータが永久に削除されます。この操作は元に戻せません。',cancel:'キャンセル',delNow:'今すぐ削除',save:'変更を保存',analysing:'分析中...',ph1:'写真1',ph2:'写真2',ph3:'写真3',
+tiers:['🌱 新参者','🌿 探求者','🎋 文化探求者','🏛️ 遺産の守護者','🌺 グローバル大使']},
+ko:{tagline:'전 세계 문화의 전통 게임을 발견하고 플레이하세요',signIn:'로그인',createAcc:'계정 만들기',email:'이메일',pass:'비밀번호',passMin:'비밀번호 (최소 6자)',forgotPw:'비밀번호를 잊으셨나요?',dispName:'표시 이름',country:'국가/지역',progress:'문화 진행도',pts:'점',explore:'지역별 게임 탐색',submitPh:'사진 제출로 포인트 획득',selGame:'어떤 게임을 플레이했나요?',aiSubmit:'AI 검토 제출',navExplore:'탐색',navLib:'라이브러리',navRank:'순위',navProf:'프로필',rankTitle:'글로벌 순위',libTitle:'문화 라이브러리',totPts:'총 포인트',games:'게임',rank:'글로벌 순위',photos:'사진',badges:'배지',langSec:'언어',appLang:'앱 언어',account:'계정',editProf:'프로필 편집',editProfSub:'이름과 국가',changePw:'비밀번호 변경',changePwSub:'로그인 비밀번호 업데이트',verified:'인증됨',about:'정보',aboutApp:'HeritageGames 정보',version:'버전 1.0 · DFC 프로젝트',session:'세션',signOut:'로그아웃',signOutSub:'이 계정에서 나가기',danger:'위험 구역',delAcc:'계정 삭제',delAccSub:'모든 데이터 영구 삭제',back:'뒤로',howTo:'📖 플레이 방법',aboutGame:'이 게임에 대해',challenges:'포인트 획득 도전',ptsBreak:'포인트 내역',completion:'완료',perPhoto:'사진당',startChall:'도전 시작',claim:'포인트 받기!',close:'닫기',editProfDesc:'표시 이름과 국가 업데이트',newPw:'새 비밀번호',confPw:'새 비밀번호 확인',changePwDesc:'새 비밀번호를 입력하세요',selLang:'언어 선택',selLangSub:'원하는 언어를 선택하세요',aboutProj:'프로젝트 소개',aboutTxt:'HeritageGames는 전 세계 문화의 전통 게임을 보존하고 기념하기 위한 DFC 프로젝트입니다.',tech:'기술',techTxt:'Claude AI 비전으로 사진 검증, Supabase로 실시간 글로벌 순위, GitHub Pages로 호스팅.',delTitle:'계정을 삭제하시겠습니까?',delWarn:'모든 포인트와 데이터가 영구 삭제됩니다. 취소할 수 없습니다.',cancel:'취소',delNow:'지금 삭제',save:'변경 저장',analysing:'분석 중...',ph1:'사진 1',ph2:'사진 2',ph3:'사진 3',
+tiers:['🌱 신규 회원','🌿 탐험가','🎋 문화 탐구자','🏛️ 유산 지킴이','🌺 글로벌 대사']},
+fr:{tagline:'Découvrez et jouez à des jeux traditionnels de cultures du monde entier',signIn:'Se Connecter',createAcc:'Créer un Compte',email:'EMAIL',pass:'MOT DE PASSE',passMin:'MOT DE PASSE (MIN. 6 CARACTÈRES)',forgotPw:'Mot de passe oublié ?',dispName:'NOM D\'AFFICHAGE',country:'PAYS / RÉGION',progress:'Progression Culturelle',pts:'PTS',explore:'Explorer les Jeux par Région',submitPh:'Soumettre vos Photos',selGame:'Quel jeu avez-vous joué ?',aiSubmit:'Soumettre pour Révision IA',navExplore:'Explorer',navLib:'Bibliothèque',navRank:'Classement',navProf:'Profil',rankTitle:'Classement Mondial',libTitle:'Bibliothèque Culturelle',totPts:'Points Totaux',games:'Jeux',rank:'Rang Mondial',photos:'Photos',badges:'Badges',langSec:'Langue',appLang:'Langue de l\'App',account:'Compte',editProf:'Modifier le Profil',editProfSub:'Nom et pays',changePw:'Changer le Mot de Passe',changePwSub:'Mettre à jour votre mot de passe',verified:'Vérifié',about:'À Propos',aboutApp:'À Propos de HeritageGames',version:'Version 1.0 · Projet DFC',session:'Session',signOut:'Se Déconnecter',signOutSub:'Quitter ce compte',danger:'Zone Dangereuse',delAcc:'Supprimer le Compte',delAccSub:'Supprimer toutes les données',back:'Retour',howTo:'📖 COMMENT JOUER',aboutGame:'À PROPOS DU JEU',challenges:'DÉFIS POUR GAGNER DES POINTS',ptsBreak:'RÉPARTITION DES POINTS',completion:'Terminé',perPhoto:'Par photo',startChall:'Commencer le Défi',claim:'Réclamer les Points !',close:'Fermer',editProfDesc:'Mettre à jour nom et pays',newPw:'NOUVEAU MOT DE PASSE',confPw:'CONFIRMER LE MOT DE PASSE',changePwDesc:'Entrez un nouveau mot de passe',selLang:'Sélectionner la Langue',selLangSub:'Choisissez votre langue préférée',aboutProj:'À PROPOS DU PROJET',aboutTxt:'HeritageGames est un projet DFC pour préserver et célébrer les jeux traditionnels du monde entier.',tech:'TECHNOLOGIE',techTxt:'Propulsé par Claude AI Vision, Supabase pour le classement mondial, et GitHub Pages.',delTitle:'Supprimer le Compte ?',delWarn:'Tous vos points et données seront définitivement supprimés.',cancel:'Annuler',delNow:'Supprimer Maintenant',save:'Sauvegarder',analysing:'Analyse en cours...',ph1:'PHOTO 1',ph2:'PHOTO 2',ph3:'PHOTO 3',
+tiers:['🌱 Débutant','🌿 Explorateur','🎋 Chercheur Culturel','🏛️ Gardien du Patrimoine','🌺 Ambassadeur Mondial']},
+es:{tagline:'Descubre y juega juegos tradicionales de culturas de todo el mundo',signIn:'Iniciar Sesión',createAcc:'Crear Cuenta',email:'CORREO',pass:'CONTRASEÑA',passMin:'CONTRASEÑA (MÍN. 6 CARACTERES)',forgotPw:'¿Olvidaste tu contraseña?',dispName:'NOMBRE DE DISPLAY',country:'PAÍS / REGIÓN',progress:'Progreso Cultural',pts:'PTS',explore:'Explorar Juegos por Región',submitPh:'Enviar Fotos',selGame:'¿Qué juego jugaste?',aiSubmit:'Enviar para Revisión IA',navExplore:'Explorar',navLib:'Biblioteca',navRank:'Clasificación',navProf:'Perfil',rankTitle:'Clasificación Global',libTitle:'Biblioteca Cultural',totPts:'Puntos Totales',games:'Juegos',rank:'Rango Global',photos:'Fotos',badges:'Insignias',langSec:'Idioma',appLang:'Idioma de la App',account:'Cuenta',editProf:'Editar Perfil',editProfSub:'Nombre y país',changePw:'Cambiar Contraseña',changePwSub:'Actualiza tu contraseña',verified:'Verificado',about:'Acerca de',aboutApp:'Acerca de HeritageGames',version:'Versión 1.0 · Proyecto DFC',session:'Sesión',signOut:'Cerrar Sesión',signOutSub:'Salir de esta cuenta',danger:'Zona de Peligro',delAcc:'Eliminar Cuenta',delAccSub:'Borrar todos los datos permanentemente',back:'Volver',howTo:'📖 CÓMO JUGAR',aboutGame:'SOBRE ESTE JUEGO',challenges:'DESAFÍOS PARA GANAR PUNTOS',ptsBreak:'DESGLOSE DE PUNTOS',completion:'Completado',perPhoto:'Por foto',startChall:'Comenzar Desafío',claim:'¡Reclamar Puntos!',close:'Cerrar',editProfDesc:'Actualizar nombre y país',newPw:'NUEVA CONTRASEÑA',confPw:'CONFIRMAR NUEVA CONTRASEÑA',changePwDesc:'Ingresa una nueva contraseña',selLang:'Seleccionar Idioma',selLangSub:'Elige tu idioma preferido',aboutProj:'SOBRE EL PROYECTO',aboutTxt:'HeritageGames es un proyecto DFC para preservar y celebrar los juegos tradicionales de culturas de todo el mundo.',tech:'TECNOLOGÍA',techTxt:'Impulsado por Claude AI Vision, Supabase para clasificación en tiempo real, y GitHub Pages.',delTitle:'¿Eliminar Cuenta?',delWarn:'Todos tus puntos y datos serán eliminados permanentemente.',cancel:'Cancelar',delNow:'Eliminar Ahora',save:'Guardar Cambios',analysing:'Analizando...',ph1:'FOTO 1',ph2:'FOTO 2',ph3:'FOTO 3',
+tiers:['🌱 Novato','🌿 Explorador','🎋 Buscador Cultural','🏛️ Guardián del Patrimonio','🌺 Embajador Global']}
+};
+
+/* ── REGIONS ── */
+const REGIONS=[
+  {id:'all',flag:'🌍',en:'All',vi:'Tất Cả',zh:'全部',ja:'全て',ko:'전체',fr:'Tout',es:'Todo'},
+  {id:'vietnam',flag:'🇻🇳',en:'Vietnam',vi:'Việt Nam',zh:'越南',ja:'ベトナム',ko:'베트남',fr:'Vietnam',es:'Vietnam'},
+  {id:'eastasia',flag:'🗾',en:'East Asia',vi:'Đông Á',zh:'东亚',ja:'東アジア',ko:'동아시아',fr:'Asie de l\'Est',es:'Asia Oriental'},
+  {id:'southasia',flag:'🇮🇳',en:'South Asia',vi:'Nam Á',zh:'南亚',ja:'南アジア',ko:'남아시아',fr:'Asie du Sud',es:'Asia del Sur'},
+  {id:'africa',flag:'🌍',en:'Africa',vi:'Châu Phi',zh:'非洲',ja:'アフリカ',ko:'아프리카',fr:'Afrique',es:'África'},
+  {id:'europe',flag:'🇪🇺',en:'Europe',vi:'Châu Âu',zh:'欧洲',ja:'ヨーロッパ',ko:'유럽',fr:'Europe',es:'Europa'},
+  {id:'americas',flag:'🌎',en:'Americas',vi:'Châu Mỹ',zh:'美洲',ja:'アメリカ',ko:'아메리카',fr:'Amériques',es:'Américas'},
+];
+
+/* ── GAMES ── */
+const G={
+  banhDua:{name:{en:'Banh Dua',vi:'Banh Đũa',zh:'筷子球',ja:'バインドゥア',ko:'바인두아',fr:'Banh Dua',es:'Banh Dua'},region:'vietnam',icon:'🥢',pts:180,diff:'easy',color:'#7B3F00',
+    desc:{en:'A popular folk game using chopsticks and a small ball. Players toss, hit and catch the ball without letting it fall.',vi:'Trò chơi dân gian phổ biến, chỉ cần đôi đũa và quả bóng nhỏ. Người chơi dùng đũa tung, đập và đỡ bóng không để rơi.'},
+    howto:{en:'1. Get chopsticks + a small ball (tennis mini, paper ball, bottle cap).\n2. Toss the ball up and use chopsticks to keep it airborne.\n3. Play solo (count hits) or pass to a partner.\n4. Most consecutive hits wins!',vi:'1. Chuẩn bị 1 đôi đũa + 1 quả bóng nhỏ.\n2. Tung bóng lên và dùng đũa giữ bóng không rơi.\n3. Chơi 1 mình hoặc 2 người.'},
+    challenges:{en:['Photo clearly showing chopsticks and ball in hand or mid-air','Chopsticks and player must be clearly visible','Smiles and fun atmosphere earn bonus!'],vi:['Chụp ảnh đang cầm đũa và có bóng rõ ràng','Ảnh phải thấy rõ đôi đũa và người đang chơi','Nụ cười và không khí vui vẻ là điểm cộng!']},
+    lib:{en:'Banh Dua requires only ordinary chopsticks. Trains hand-eye coordination and quick reflexes.',vi:'Banh Đũa chỉ cần đôi đũa bình thường. Rèn luyện sự khéo léo và phản xạ nhanh.'}},
+  oAnQuan:{name:{en:'O An Quan',vi:'Ô Ăn Quan',zh:'官员棋',ja:'オアンクアン',ko:'오안관',fr:'O An Quan',es:'O An Quan'},region:'vietnam',icon:'🪨',pts:260,diff:'easy',color:'#2E5B1A',
+    desc:{en:'A 16th-century strategic folk game. Players distribute pebbles across cells on a board to capture the most stones.',vi:'Trò chơi chiến lược cổ đại từ thế kỷ 16. Người chơi rải sỏi để thu thập nhiều hơn đối thủ.'},
+    howto:{en:'1. Draw 2 rows of 5 small cells + 1 large "quan" cell at each end.\n2. Place 5 pebbles in each small cell.\n3. Pick up all pebbles from one cell and distribute clockwise.\n4. Most pebbles wins!',vi:'1. Vẽ 2 hàng 5 ô nhỏ + 1 ô quan lớn ở mỗi đầu.\n2. Đặt 5 sỏi vào mỗi ô nhỏ.\n3. Lượt đến, lấy hết sỏi 1 ô và rải ngược chiều kim đồng hồ.'},
+    challenges:{en:['Photo of 2 people playing with a visible board and pebbles','Board can be drawn on ground — no store-bought needed!','Focused expressions earn bonus!'],vi:['Chụp ảnh 2 người chơi với bàn sỏi rõ ràng','Bàn chơi có thể vẽ trên đất','Khuôn mặt tập trung là điểm cộng!']},
+    lib:{en:'O An Quan reflects Vietnamese mathematical intelligence. Only pebbles and a drawn board needed. Trains logical thinking and strategy.',vi:'Ô Ăn Quan phản ánh trí tuệ toán học của người Việt. Chỉ cần sỏi và vẽ ô trên đất là đủ.'}},
+  rongRan:{name:{en:'Rong Ran Len May',vi:'Rồng Rắn Lên Mây',zh:'蛇升云',ja:'ロンラン',ko:'용뱀올라가기',fr:'Rong Ran Len May',es:'Rong Ran Len May'},region:'vietnam',icon:'🐍',pts:380,diff:'med',color:'#1A5C4E',
+    desc:{en:'A group game representing a dragon flying into clouds — symbol of luck. Players chain together to protect the tail from the "doctor".',vi:'Trò chơi vận động mô phỏng rồng bay lên mây — biểu tượng may mắn.'},
+    howto:{en:'1. One person is the "doctor," the rest form a long chain.\n2. Lead the chain to the doctor and sing the folk chant.\n3. The doctor tries to catch the tail — the chain defends it!',vi:'1. Chọn 1 người "thầy thuốc", còn lại xếp thành hàng dài.\n2. Đối đáp đồng dao với thầy thuốc.\n3. Thầy thuốc cố bắt đuôi — cả hàng bảo vệ!'},
+    challenges:{en:['Photo of 6+ people standing in a long chain holding each other','Chain must be clearly visible','Action shot of chain running is a bonus!'],vi:['Chụp ảnh cả nhóm xếp hàng dài nắm vai nhau (ít nhất 6 người)','Hàng người phải thấy rõ ràng']},
+    lib:{en:'Rong Ran Len May embodies beliefs about good harvest. Its folk chant is precious Vietnamese cultural heritage.',vi:'Rồng Rắn Lên Mây chứa đựng tín ngưỡng về mưa thuận gió hoà.'}},
+  nhayLonCon:{name:{en:'Hopscotch (Nhay Lo Co)',vi:'Nhảy Lò Cò',zh:'跳房子',ja:'ケンケンパ',ko:'사방치기',fr:'Marelle Vietnamienne',es:'Rayuela'},region:'vietnam',icon:'🦘',pts:160,diff:'easy',color:'#1A4E6E',
+    desc:{en:'Hop on one foot through drawn squares without touching lines. Classic childhood game everywhere!',vi:'Co một chân và nhảy qua các ô vẽ trên đất mà không mất thăng bằng.'},
+    howto:{en:'1. Draw 8-10 squares on ground in zigzag or straight line.\n2. Hop on one foot without touching lines.\n3. Throw a stone, skip that square for extra challenge!',vi:'1. Vẽ 8–10 ô trên đất.\n2. Co 1 chân, nhảy lò cò qua từng ô không dẫm vào đường kẻ.\n3. Biến thể: ném đá vào ô trước rồi nhảy tránh ô đó.'},
+    challenges:{en:['Photo of you hopping on clearly drawn squares','Squares must be visible on ground','Group playing together is even better!'],vi:['Chụp ảnh đang nhảy trên các ô vẽ rõ ràng trên đất','Ảnh phải thấy rõ các ô và người đang co chân nhảy']},
+    lib:{en:'Hopscotch is tied to childhood memories worldwide. Just chalk or a stick on the ground is all you need.',vi:'Nhảy Lò Cò gắn với ký ức tuổi thơ của hầu hết người Việt.'}},
+  keoCo:{name:{en:'Tug of War (Keo Co)',vi:'Kéo Co',zh:'拔河',ja:'綱引き',ko:'줄다리기',fr:'Tir à la Corde',es:'Jalar la Cuerda'},region:'vietnam',icon:'💪',pts:320,diff:'med',color:'#7B1A00',
+    desc:{en:'UNESCO-recognised folk sport. Two teams pull a rope — the team that drags the other past centre wins.',vi:'Môn thể thao dân gian được UNESCO công nhận.'},
+    howto:{en:'1. Get a long rope (tied clothes work too!).\n2. Split into 2 teams, mark the centre.\n3. On signal, pull hard toward your side!\n4. Best of 3 rounds.',vi:'1. Cần 1 sợi dây thừng dài.\n2. Chia 2 đội đều nhau, vẽ vạch giữa.\n3. Kéo mạnh về phía mình.'},
+    challenges:{en:['Photo of 2 teams pulling rope with 6+ people','Rope must be clearly visible','Show team spirit and determination!'],vi:['Chụp ảnh 2 đội đang kéo dây với ít nhất 6 người','Ảnh phải thấy rõ sợi dây và 2 đội căng sức kéo']},
+    lib:{en:'Keo Co is UNESCO Intangible Cultural Heritage, tied to Vietnamese agricultural festivals.',vi:'Kéo Co được UNESCO công nhận là Di sản Văn hoá Phi vật thể.'}},
+  muaRoi:{name:{en:'Water Puppetry',vi:'Múa Rối Nước',zh:'水上木偶',ja:'水上人形劇',ko:'수상 인형극',fr:'Marionnettes sur l\'Eau',es:'Marionetas en el Agua'},region:'vietnam',icon:'🎭',pts:500,diff:'hard',color:'#3A2010',locked:true,unlockAt:600,
+    desc:{en:'UNESCO-recognised art form unique to the Red River Delta. Performers control wooden puppets on water.',vi:'Nghệ thuật độc đáo của đồng bằng sông Hồng, được UNESCO công nhận.'},
+    howto:{en:'Visit Thang Long Water Puppet Theatre in Hanoi or cultural festivals to experience live performances.',vi:'Tìm đến Nhà hát Múa Rối Thăng Long (Hà Nội) hoặc các lễ hội văn hoá.'},
+    challenges:{en:['Photo at a real water puppet performance','Must show the water stage, puppets or audience','Share the venue and story performed'],vi:['Chụp ảnh tại buổi biểu diễn múa rối nước thực tế','Ảnh phải thấy rõ sân khấu nước hoặc con rối']},
+    lib:{en:'Water puppetry uses water as a natural stage. UNESCO Intangible Cultural Heritage since 2016.',vi:'Múa Rối Nước sử dụng mặt nước làm sân khấu. UNESCO công nhận là Di sản Văn hoá Phi vật thể.'}},
+  kendama:{name:{en:'Kendama',vi:'Kendama',zh:'剑球',ja:'けん玉',ko:'켄다마',fr:'Kendama',es:'Kendama'},region:'eastasia',icon:'🪀',pts:220,diff:'easy',color:'#B22222',
+    desc:{en:'Japanese skill toy — a handle, ball, and string. Players perform tricks catching the ball in cups or on the spike.',vi:'Đồ chơi kỹ năng Nhật Bản với tay cầm, bóng và dây.'},
+    howto:{en:'1. Hold the ken (handle) firmly.\n2. Basic trick: swing the ball and catch in large cup.\n3. Progress to smaller cups and the spike.\n4. Learn tricks like "lighthouse"!',vi:'1. Cầm tay cầm chắc chắn.\n2. Trick cơ bản: đung đưa bóng và bắt vào cốc lớn.\n3. Tiến lên cốc nhỏ và mũi nhọn.'},
+    challenges:{en:['Clear photo of someone playing kendama with the toy visible','Ball and handle must both be clearly seen','Landing a trick in the photo earns bonus!'],vi:['Chụp ảnh rõ ràng đang chơi kendama với đồ chơi hiện rõ','Bóng và tay cầm phải đều nhìn thấy được']},
+    lib:{en:'Kendama originated in Japan in the 1700s. Now a global skill sport with competitive communities worldwide.',vi:'Kendama xuất hiện tại Nhật Bản vào những năm 1700 và đã trở thành môn thể thao kỹ năng toàn cầu.'}},
+  yutnori:{name:{en:'Yutnori',vi:'Yutnori',zh:'掷棒游戏',ja:'ユンノリ',ko:'윷놀이',fr:'Yutnori',es:'Yutnori'},region:'eastasia',icon:'🎲',pts:280,diff:'easy',color:'#6B2D8B',
+    desc:{en:'Traditional Korean board game using four flat wooden sticks thrown like dice. Get all your pieces home first to win!',vi:'Trò chơi bảng truyền thống Hàn Quốc dùng 4 que gỗ như xúc xắc.'},
+    howto:{en:'1. Need 4 flat sticks and a board with 29 spaces.\n2. Toss sticks — combinations determine how far to move.\n3. All flat up = "mo" (move 5). Mixed = other combinations.\n4. First team to bring all pieces home wins!',vi:'1. Cần 4 que gỗ dẹt và bàn có 29 ô.\n2. Tung 4 que — tổ hợp quyết định bước đi.\n3. Đội nào đưa tất cả quân về nhà trước thắng!'},
+    challenges:{en:['Photo of group playing Yutnori with sticks and board visible','At least 2 people in the photo','Show excitement of throwing the sticks!'],vi:['Chụp ảnh nhóm đang chơi Yutnori với que gỗ và bàn chơi rõ ràng']},
+    lib:{en:'Yutnori has been played in Korea for 1,500+ years, especially popular during Seollal (Korean New Year).',vi:'Yutnori đã được chơi ở Hàn Quốc hơn 1.500 năm, đặc biệt phổ biến trong dịp Tết Seollal.'}},
+  mancala:{name:{en:'Mancala',vi:'Mancala',zh:'播棋',ja:'マンカラ',ko:'만칼라',fr:'Mancala',es:'Mancala'},region:'africa',icon:'🟤',pts:260,diff:'easy',color:'#1A2E3E',
+    desc:{en:'One of the world\'s oldest strategy games, originating in Africa 7,000+ years ago. Distribute seeds to capture the most.',vi:'Một trong những trò chơi chiến lược lâu đời nhất thế giới, xuất hiện ở Châu Phi hơn 7.000 năm trước.'},
+    howto:{en:'1. 2 rows of 6 cups with 4 seeds each, 1 store at each end.\n2. Pick up all seeds from one cup, distribute one-by-one counter-clockwise.\n3. Last seed in your store = another turn.\n4. Most seeds in your store wins!',vi:'1. Chuẩn bị 2 hàng 6 ô, mỗi ô 4 hạt, 1 kho lớn ở mỗi đầu.\n2. Lấy hết hạt từ 1 ô và rải ngược chiều kim đồng hồ.'},
+    challenges:{en:['Photo of 2 people playing Mancala with board and seeds visible','Board can be improvised with cups and stones','Show the strategy and concentration!'],vi:['Chụp ảnh 2 người đang chơi Mancala với bàn và hạt rõ ràng']},
+    lib:{en:'Mancala is one of humanity\'s oldest games found across Africa, the Middle East and Asia. Archaeological evidence dates it to 6,000+ years ago in Ethiopia.',vi:'Mancala là một trong những trò chơi lâu đời nhất của nhân loại, có mặt khắp Châu Phi, Trung Đông và Châu Á.'}},
+  ampe:{name:{en:'Ampe',vi:'Ampe',zh:'阿姆佩',ja:'アンペ',ko:'암페',fr:'Ampe',es:'Ampe'},region:'africa',icon:'🦵',pts:200,diff:'easy',color:'#C0561A',
+    desc:{en:'Popular Ghanaian children\'s game: jump, clap and extend one leg. Match or mismatch legs to score points.',vi:'Trò chơi truyền thống Ghana với nhảy, vỗ tay và duỗi chân.'},
+    howto:{en:'1. Two players face each other.\n2. Both jump and clap, then land extending either leg.\n3. Same leg = follower scores. Different legs = leader scores.\n4. First to 10 points wins and becomes new leader!',vi:'1. 2 người đứng đối mặt.\n2. Cùng nhảy và vỗ tay, rồi duỗi một chân khi tiếp đất.\n3. Cùng chân → người theo dõi ghi điểm.'},
+    challenges:{en:['Photo of 2+ people playing Ampe in mid-jump with legs visible','Both players must be clearly seen in action','Joyful expressions earn bonus!'],vi:['Chụp ảnh 2+ người đang chơi Ampe với chân đang duỗi rõ ràng']},
+    lib:{en:'Ampe is one of Ghana\'s most beloved games, typically played by children and young women. Combines physical coordination with social bonding.',vi:'Ampe là một trong những trò chơi truyền thống yêu thích nhất của Ghana.'}},
+  petanque:{name:{en:'Pétanque',vi:'Pétanque',zh:'法式滚球',ja:'ペタンク',ko:'페탕크',fr:'Pétanque',es:'Petanca'},region:'europe',icon:'🎳',pts:240,diff:'easy',color:'#1A4E7B',
+    desc:{en:'French folk game: throw metal balls as close as possible to a small target ball (cochonnet). Knock opponents\' balls away!',vi:'Trò chơi dân gian Pháp — ném bóng kim loại càng gần cochonnet (mục tiêu nhỏ) càng tốt.'},
+    howto:{en:'1. Place cochonnet 6-10m away.\n2. Teams take turns throwing boules toward the cochonnet.\n3. Can knock opponents\' balls away!\n4. Team with closest ball scores. First to 13 points wins.',vi:'1. Đặt cochonnet cách 6–10m.\n2. Luân phiên ném bóng cố gắng đến gần cochonnet nhất.\n3. Có thể đẩy bóng đối thủ ra xa!'},
+    challenges:{en:['Photo of people playing pétanque with metal balls and cochonnet visible','At least 2 people visible','Show the throwing action or balls near the target'],vi:['Chụp ảnh mọi người đang chơi pétanque với bóng kim loại rõ ràng']},
+    lib:{en:'Pétanque originated in Provence, France in 1907. Now played in 160+ countries — one of the world\'s most popular folk sports.',vi:'Pétanque xuất hiện ở Provence, Pháp năm 1907 và hiện được chơi ở hơn 160 quốc gia.'}},
+  kabaddi:{name:{en:'Kabaddi',vi:'Kabaddi',zh:'卡巴迪',ja:'カバディ',ko:'카바디',fr:'Kabaddi',es:'Kabaddi'},region:'southasia',icon:'🤸',pts:350,diff:'med',color:'#0E6E6E',
+    desc:{en:'Ancient South Asian contact sport. Raiders enter the opponent\'s half, tag defenders and return — all in one breath while chanting "kabaddi"!',vi:'Môn thể thao tiếp xúc cổ đại của Nam Á.'},
+    howto:{en:'1. Two teams of 7, one half each.\n2. Raider enters opponents\' half chanting "kabaddi kabaddi" continuously.\n3. Tag defenders then return without being tackled.\n4. Tagged defenders are out. Tackled raider is out.',vi:'1. 2 đội 7 người, mỗi đội một nửa sân.\n2. Người tấn công xâm nhập hô liên tục "kabaddi" trong một hơi.\n3. Chạm người rồi về nhà không bị bắt.'},
+    challenges:{en:['Photo of group playing kabaddi with raider and defenders visible','At least 4 players in the photo','Capture the intensity and energy!'],vi:['Chụp ảnh nhóm đang chơi kabaddi với người tấn công và hậu vệ rõ ràng']},
+    lib:{en:'Kabaddi has been played in India for 4,000+ years. National sport of Bangladesh and played at Asian Games.',vi:'Kabaddi đã được chơi ở Ấn Độ hơn 4.000 năm và là môn thể thao quốc gia của Bangladesh.'}},
+  loteria:{name:{en:'Lotería',vi:'Lotería',zh:'墨西哥宾果',ja:'ロテリア',ko:'로테리아',fr:'Lotería',es:'Lotería'},region:'americas',icon:'🃏',pts:200,diff:'easy',color:'#B22000',
+    desc:{en:'Traditional Mexican game like bingo — illustrated cards instead of numbers. First to complete a pattern shouts "¡Lotería!" and wins.',vi:'Trò chơi truyền thống Mexico tương tự bingo, dùng thẻ có hình minh hoạ.'},
+    howto:{en:'1. Each player gets a board (tabla) with 16 illustrated images.\n2. Caller draws cards and announces them (often with riddles!).\n3. Mark matching images with a bean or coin.\n4. Complete a row, column, diagonal or full board to win!',vi:'1. Mỗi người nhận 1 bảng với 16 hình ảnh.\n2. Người hô rút thẻ và hô tên (thường kèm câu đố!).\n3. Đánh dấu hình ảnh khớp.'},
+    challenges:{en:['Photo of group playing Lotería with cards and boards visible','At least 2 people in the photo','Show the excitement of someone winning!'],vi:['Chụp ảnh nhóm đang chơi Lotería với thẻ bài và bảng rõ ràng']},
+    lib:{en:'Lotería originated in 15th-century Italy but became a beloved Mexican cultural institution in the 18th century. Its 54 iconic illustrated cards are embedded in Mexican folk art.',vi:'Lotería có nguồn gốc từ Ý thế kỷ 15 nhưng được đưa vào Mexico thế kỷ 18 và trở thành biểu tượng văn hoá.'}},
+};
+
+const LANG_NAMES={en:'English',vi:'Tiếng Việt',zh:'中文',ja:'日本語',ko:'한국어',fr:'Français',es:'Español'};
+const LANG_FLAGS={en:'🇬🇧',vi:'🇻🇳',zh:'🇨🇳',ja:'🇯🇵',ko:'🇰🇷',fr:'🇫🇷',es:'🇪🇸'};
+const REGION_LABELS={vietnam:'🇻🇳 Vietnam',eastasia:'🗾 East Asia',southasia:'🇮🇳 South Asia',africa:'🌍 Africa',europe:'🇪🇺 Europe',americas:'🌎 Americas'};
+
+/* ── STATE ── */
+let CU=null,P={name:'',country:'',ini:'',pts:0,played:[],photos:0};
+let pendPics=[null,null,null],pendGame=null,pendPts=0,curSlot=0,activeRegion='all';
+let lang=localStorage.getItem('hg_lang')||'en',toastTm=null;
+
+/* ── HELPERS ── */
+const t=k=>(T[lang]&&T[lang][k])||T.en[k]||k;
+const gt=o=>o&&(o[lang]||o.en)||'';
+const ini=n=>{if(!n)return'?';const p=n.trim().split(' ');return((p[0]?.[0]||'')+(p[p.length-1]?.[0]||'')).toUpperCase()||'?'};
+
+/* ── i18n ── */
+function applyLang(){
+  const M={
+    aTag:'tagline',tab_si:'signIn',tab_su:'createAcc',lEmail:'email',lPass:'pass',lPassMin:'passMin',
+    lForgot:'forgotPw',lName:'dispName',lCountry:'country',siBtnEl:'signIn',suBtnEl:'createAcc',
+    lProgress:'progress',lPts:'pts',lExplore:'explore',lSubmit:'submitPh',lSelGame:'selGame',
+    lAISubmit:'aiSubmit',lnHome:'navExplore',lnLib:'navLib',lnRank:'navRank',lnProf:'navProf',
+    lRankTitle:'rankTitle',lLibTitle:'libTitle',lTotPts:'totPts',lGames:'games',lRank:'rank',
+    lPhotos:'photos',lBadges:'badges',lLangSec:'langSec',lAppLang:'appLang',lAccount:'account',
+    lEditProf:'editProf',lEditProfSub:'editProfSub',lChangePw:'changePw',lChangePwSub:'changePwSub',
+    lVerified:'verified',lAboutSec:'about',lAboutApp:'aboutApp',lVersion:'version',lVersion2:'version',
+    lSessionSec:'session',lSignOut:'signOut',lSignOutSub:'signOutSub',lDanger:'danger',
+    lDelAcc:'delAcc',lDelAccSub:'delAccSub',lBack:'back',lHowTo:'howTo',lAboutGame:'aboutGame',
+    lChallenges:'challenges',lPtsBreak:'ptsBreak',lCompletion:'completion',lPerPhoto:'perPhoto',
+    lStartChall:'startChall',lClaim:'claim',lClose1:'close',lClose2:'close',lClose3:'close',
+    lAnalysing:'analysing',lEditProf2:'editProf',lEditProfDesc:'editProfDesc',lDispName:'dispName',
+    lCountry2:'country',lSave:'save',lCancel1:'cancel',lCancel2:'cancel',lCancel3:'cancel',
+    lChangePw2:'changePw',lChangePwDesc:'changePwDesc',lNewPw:'newPw',lConfPw:'confPw',
+    lChangePwBtn:'changePw',lSelLang:'selLang',lSelLangSub:'selLangSub',lAboutProj:'aboutProj',
+    lAboutTxt:'aboutTxt',lTech:'tech',lTechTxt:'techTxt',lDelTitle:'delTitle',lDelWarn:'delWarn',
+    lDelNow:'delNow',curLangDisp:null,lPh1:'ph1',lPh2:'ph2',lPh3:'ph3'
+  };
+  Object.entries(M).forEach(([id,key])=>{
+    const el=document.getElementById(id);
+    if(!el)return;
+    if(id==='curLangDisp'){el.textContent=LANG_NAMES[lang]||'English';}
+    else if(key)el.textContent=t(key);
+  });
+  // photo slots that aren't filled
+  for(let i=0;i<3;i++){const el=document.getElementById('ps'+i);if(el&&!el.classList.contains('filled')){const spl=el.querySelector('.spl');if(spl)spl.textContent=t(['ph1','ph2','ph3'][i]);}}
+}
+function setLang(l,el){
+  lang=l;localStorage.setItem('hg_lang',l);
+  document.querySelectorAll('.lbtn').forEach(b=>b.classList.remove('on'));
+  if(el)el.classList.add('on');
+  applyLang();
+  if(document.getElementById('mainapp').style.display!=='none'){
+    buildRegionTabs();buildGameList();buildGameSelect();buildLibrary();renderProfile();
+  }
+}
+
+/* ── BOOT ── */
+window.onload=async()=>{
+  document.getElementById('finput').addEventListener('change',handleFile);
+  document.querySelectorAll('.lbtn').forEach(b=>{
+    const m=b.getAttribute('onclick').match(/'(\w+)'/);
+    if(m&&m[1]===lang)b.classList.add('on');else b.classList.remove('on');
+  });
+  applyLang();
+  const{data:{session}}=await SB.auth.getSession();
+  if(session){CU=session.user;await loadProfile();showApp();}
+  else showAuth();
+  SB.auth.onAuthStateChange(async(ev,ses)=>{
+    if(ev==='SIGNED_IN'&&ses){CU=ses.user;await loadProfile();showApp();}
+    else if(ev==='SIGNED_OUT'){CU=null;P={name:'',country:'',ini:'',pts:0,played:[],photos:0};showAuth();}
+  });
+};
+
+/* ── AUTH ── */
+function showAuth(){document.getElementById('aw').classList.remove('hidden');document.getElementById('mainapp').style.display='none';clearAMsgs();}
+function showApp(){document.getElementById('aw').classList.add('hidden');document.getElementById('mainapp').style.display='flex';buildRegionTabs();buildGameList();buildGameSelect();buildLibrary();updateHomeUI();nav('home');}
+function switchTab(tab){clearAMsgs();['si','su'].forEach(t=>{document.getElementById('tab-'+t).classList.toggle('on',t===tab);document.getElementById('form-'+t).style.display=t===tab?'block':'none';});}
+function showAErr(m){const e=document.getElementById('aerr');e.textContent=m;e.classList.add('show');document.getElementById('aok').classList.remove('show');}
+function showAOk(m){const e=document.getElementById('aok');e.textContent=m;e.classList.add('show');document.getElementById('aerr').classList.remove('show');}
+function clearAMsgs(){document.getElementById('aerr').classList.remove('show');document.getElementById('aok').classList.remove('show');}
+async function doSignIn(){
+  const em=document.getElementById('siEmail').value.trim(),pw=document.getElementById('siPass').value;
+  if(!em||!pw){showAErr('Please enter email and password.');return;}
+  const btn=document.getElementById('siBtnEl');btn.disabled=true;btn.textContent='...';
+  const{error}=await SB.auth.signInWithPassword({email:em,password:pw});
+  btn.disabled=false;btn.textContent=t('signIn');
+  if(error)showAErr('Incorrect email or password. Please try again.');
+}
+async function doSignUp(){
+  const name=document.getElementById('suName').value.trim();
+  const country=document.getElementById('suCountry').value;
+  const em=document.getElementById('suEmail').value.trim();
+  const pw=document.getElementById('suPass').value;
+  if(!name){showAErr('Please enter your display name.');return;}
+  if(!country){showAErr('Please select your country.');return;}
+  if(!em){showAErr('Please enter your email.');return;}
+  if(pw.length<6){showAErr('Password must be at least 6 characters.');return;}
+  const btn=document.getElementById('suBtnEl');btn.disabled=true;btn.textContent='...';
+  const{data,error}=await SB.auth.signUp({email:em,password:pw,options:{data:{name,country}}});
+  btn.disabled=false;btn.textContent=t('createAcc');
+  if(error){showAErr('Error: '+error.message);return;}
+  if(data.user)await SB.from('leaderboard').insert({user_id:data.user.id,name,city:country,points:0,games_played:0,games_played_list:'[]',photos_shared:0});
+  showAOk('Account created! Signing you in...');
+}
+async function doSignOut(){await SB.auth.signOut();toast(t('signOut')+' ✓');}
+async function showForgot(){
+  const em=document.getElementById('siEmail').value.trim();
+  if(!em){showAErr('Enter your email first.');return;}
+  const{error}=await SB.auth.resetPasswordForEmail(em);
+  if(error)showAErr('Error: '+error.message);
+  else showAOk('Reset email sent! Check your inbox.');
+}
+
+/* ── PROFILE DATA ── */
+async function loadProfile(){
+  if(!CU)return;
+  const{data}=await SB.from('leaderboard').select('*').eq('user_id',CU.id).single();
+  if(data){P={name:data.name||'',country:data.city||'',pts:data.points||0,played:data.games_played_list?JSON.parse(data.games_played_list):[],photos:data.photos_shared||0,ini:ini(data.name||'')};}
+  else{const m=CU.user_metadata||{};const n=m.name||CU.email?.split('@')[0]||'Player';P={name:n,country:m.country||'',pts:0,played:[],photos:0,ini:ini(n)};await pushScore();}
+}
+async function pushScore(){
+  if(!CU)return;
+  await SB.from('leaderboard').upsert({user_id:CU.id,name:P.name,city:P.country,points:P.pts,games_played:P.played.length,games_played_list:JSON.stringify(P.played),photos_shared:P.photos,updated_at:new Date().toISOString()},{onConflict:'user_id'});
+}
+
+/* ── SETTINGS ── */
+function openEditProfile(){
+  document.getElementById('epName').value=P.name;
+  const sel=document.getElementById('epCountry');
+  for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===P.country||sel.options[i].text===P.country){sel.selectedIndex=i;break;}}
+  openModal('mEditProf');
+}
+async function saveProfile(){
+  const name=document.getElementById('epName').value.trim(),country=document.getElementById('epCountry').value;
+  if(!name){toast('Please enter a name!');return;}
+  P.name=name;P.country=country;P.ini=ini(name);
+  await pushScore();closeModal('mEditProf');updateHomeUI();renderProfile();toast('✅ Profile updated!');
+}
+function openChangePw(){
+  document.getElementById('pwNew').value='';document.getElementById('pwConf').value='';
+  document.getElementById('pwMsg').classList.remove('show','err','ok');openModal('mChangePw');
+}
+async function doChangePw(){
+  const np=document.getElementById('pwNew').value,cp=document.getElementById('pwConf').value;
+  const msg=document.getElementById('pwMsg');msg.classList.remove('show','err','ok');
+  if(np.length<6){msg.textContent='Password must be at least 6 characters.';msg.classList.add('show','err');return;}
+  if(np!==cp){msg.textContent='Passwords do not match.';msg.classList.add('show','err');return;}
+  const{error}=await SB.auth.updateUser({password:np});
+  if(error){msg.textContent='Error: '+error.message;msg.classList.add('show','err');}
+  else{msg.textContent='Password changed!';msg.classList.add('show','ok');setTimeout(()=>closeModal('mChangePw'),1500);}
+}
+function openLangPicker(){
+  document.getElementById('langPickerList').innerHTML=Object.entries(LANG_NAMES).map(([code,name])=>`
+    <div class="sitem" onclick="setLang('${code}',null);closeModal('mLang');renderProfile()">
+      <div class="sico" style="background:var(--pu);font-size:18px">${LANG_FLAGS[code]}</div>
+      <div class="stxt"><div class="stitle">${name}</div></div>
+      ${lang===code?'<div style="color:var(--p);font-size:18px">✓</div>':''}
+    </div>`).join('');
+  openModal('mLang');
+}
+function confirmDel(){document.getElementById('coverDel').classList.add('open');}
+function closeCover(){document.getElementById('coverDel').classList.remove('open');}
+async function doDeleteAccount(){
+  closeCover();
+  try{await SB.rpc('delete_user');}catch(e){await SB.from('leaderboard').delete().eq('user_id',CU.id);}
+  await SB.auth.signOut();toast('Account deleted.');
+}
+
+/* ── BUILD UI ── */
+function buildRegionTabs(){
+  document.getElementById('rtabs').innerHTML=REGIONS.map(r=>`
+    <div class="rtab${activeRegion===r.id?' on':''}" onclick="filterRegion('${r.id}',this)">
+      ${r.flag} ${r[lang]||r.en}
+    </div>`).join('');
+}
+function filterRegion(r,el){
+  activeRegion=r;document.querySelectorAll('.rtab').forEach(t=>t.classList.remove('on'));el.classList.add('on');buildGameList();
+}
+function buildGameList(){
+  const diffLabel={easy:{en:'🟢 Easy',vi:'🟢 Dễ',zh:'🟢 简单',ja:'🟢 簡単',ko:'🟢 쉬움',fr:'🟢 Facile',es:'🟢 Fácil'},med:{en:'🟡 Medium',vi:'🟡 Trung Bình',zh:'🟡 中等',ja:'🟡 普通',ko:'🟡 보통',fr:'🟡 Moyen',es:'🟡 Medio'},hard:{en:'🔴 Challenge',vi:'🔴 Thử Thách',zh:'🔴 挑战',ja:'🔴 難しい',ko:'🔴 어려움',fr:'🔴 Défi',es:'🔴 Desafío'}};
+  let html='',i=0;
+  Object.entries(G).forEach(([id,g])=>{
+    const locked=g.locked&&P.pts<(g.unlockAt||0),done=P.played.includes(id);
+    if(activeRegion!=='all'&&g.region!==activeRegion)return;
+    html+=`<div class="gc${locked?' locked':''}" style="animation-delay:${i*0.04}s" ${locked?'':'onclick="goDetail(\''+id+'\')"'}>
+      <div class="gi">${g.icon}</div>
+      <div class="ginfo">
+        <div class="gn" style="${locked?'color:var(--t4)':''}">${gt(g.name)}</div>
+        <div class="gm">${locked?'🔒 Unlock at '+g.unlockAt+' pts':''}</div>
+        <div class="gtags">
+          ${!locked?`<span class="gtag ${g.diff}">${(diffLabel[g.diff]||{})[lang]||diffLabel[g.diff].en}</span>`:''}
+          <span class="gtag reg">${REGION_LABELS[g.region]||g.region}</span>
+          ${done&&!locked?'<span class="gtag easy">✓</span>':''}
+        </div>
+      </div>
+      <div class="gr2"><div class="gpts">+${g.pts}</div><div style="color:var(--t4);font-size:15px">›</div></div>
+    </div>`;i++;
+  });
+  document.getElementById('gamelist').innerHTML=html||`<div style="text-align:center;padding:26px;color:var(--t3);font-size:13px">No games in this region yet.</div>`;
+}
+function buildGameSelect(){
+  const sel=document.getElementById('gamesel');
+  sel.innerHTML=`<option value="">-- ${t('selGame')} --</option>`;
+  Object.entries(G).forEach(([id,g])=>{
+    if(g.locked&&P.pts<(g.unlockAt||0))return;
+    sel.innerHTML+=`<option value="${id}">${g.icon} ${gt(g.name)}</option>`;
+  });
+}
+function buildLibrary(){
+  document.getElementById('libcontent').innerHTML=
+    Object.entries(G).map(([id,g])=>`
+    <div class="lc"><div class="lch" style="background:${g.color}">
+      <span style="font-size:30px">${g.icon}</span>
+      <div><div class="lct">${gt(g.name)}</div><div class="lcsu">${(REGION_LABELS[g.region]||'').toUpperCase()}</div></div>
+    </div><div class="lcb">${gt(g.lib)}</div></div>`).join('')+'<div style="height:14px"></div>';
+}
+
+/* ── NAVIGATION ── */
+function nav(sc){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('screen-'+sc).classList.add('active');
+  if(sc==='leaderboard')renderLB();
+  if(sc==='profile')renderProfile();
+  if(sc==='home'){buildGameList();buildGameSelect();updateHomeUI();}
+}
+function goDetail(id){
+  const g=G[id];if(!g)return;
+  document.getElementById('dicon').textContent=g.icon;
+  document.getElementById('dname').textContent=gt(g.name);
+  document.getElementById('dsub').textContent=g.region.toUpperCase()+' · +'+g.pts+' pts';
+  document.getElementById('dp1').textContent='+'+g.pts;
+  const dm={easy:{lbl:'🟢 Easy',bg:'#D4EDDA',c:'#1C6B3A'},med:{lbl:'🟡 Medium',bg:'#FFF3CD',c:'#856404'},hard:{lbl:'🔴 Challenge',bg:'#F8D7DA',c:'#721C24'}};
+  const d=dm[g.diff]||dm.easy;
+  document.getElementById('dtags').innerHTML=`<div class="dtag" style="background:${d.bg};color:${d.c}">${d.lbl}</div>`;
+  document.getElementById('ddesc').textContent=gt(g.desc);
+  const chal=gt(g.challenges)||[];
+  document.getElementById('dchal').innerHTML=chal.map((c,i)=>`<div class="ci"><div class="cn">${i+1}</div><div class="ct">${c}</div></div>`).join('');
+  const hw=document.getElementById('dhowto'),ht=gt(g.howto);
+  if(ht){hw.style.display='block';document.getElementById('dhowtotext').textContent=ht;}else hw.style.display='none';
+  document.getElementById('dhead').style.background=g.color;
+  document.getElementById('jbtn').dataset.gid=id;
+  nav('detail');
+}
+function joinFromDetail(){
+  const id=document.getElementById('jbtn').dataset.gid;
+  const sel=document.getElementById('gamesel');
+  for(let i=0;i<sel.options.length;i++){if(sel.options[i].value===id){sel.selectedIndex=i;break;}}
+  toast('✅ '+gt(G[id].name)+' selected!');nav('home');
+  setTimeout(()=>document.querySelector('.pw')?.scrollIntoView({behavior:'smooth',block:'start'}),300);
+}
+
+/* ── PHOTOS & AI ── */
+function pickPhoto(i){curSlot=i;document.getElementById('finput').click();}
+function handleFile(e){
+  const f=e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=ev=>{pendPics[curSlot]=ev.target.result;renderSlots();};
+  r.readAsDataURL(f);e.target.value='';
+}
+function renderSlots(){
+  for(let i=0;i<3;i++){
+    const el=document.getElementById('ps'+i);
+    if(pendPics[i]){
+      el.innerHTML=`<img src="${pendPics[i]}" alt=""><div class="pov" onclick="removePhoto(${i})"><span style="color:#fff;font-size:18px">✕</span></div>`;
+      el.classList.add('filled');
+    }else{
+      el.innerHTML=`<div class="spp">+</div><div class="spl">${t(['ph1','ph2','ph3'][i])}</div>`;
+      el.classList.remove('filled');
+    }
+  }
+}
+function removePhoto(i){pendPics[i]=null;renderSlots();}
+async function submitPhotos(){
+  const gid=document.getElementById('gamesel').value;
+  if(!gid){toast('⚠️ '+t('selGame'));return;}
+  const photos=pendPics.filter(Boolean);
+  if(!photos.length){toast('⚠️ Please add at least 1 photo!');return;}
+  pendGame=gid;openModal('mAI');await aiReview(photos);
+}
+async function aiReview(photos){
+  const aiD=document.getElementById('aiDots'),aiR=document.getElementById('ares'),mok=document.getElementById('mok');
+  aiD.style.display='flex';aiR.style.display='none';mok.style.display='none';
+  document.getElementById('aiTitle').textContent='AI Review...';
+  document.getElementById('aiSub').textContent=t('analysing');
+  const g=G[pendGame];
+  const chal=gt(g.challenges)||[];
+  const langName={en:'English',vi:'Vietnamese',zh:'Chinese',ja:'Japanese',ko:'Korean',fr:'French',es:'Spanish'}[lang]||'English';
+  const content=[{type:'text',text:`You are a STRICT photo reviewer for "HeritageGames" — preserving traditional games worldwide.
+
+Game claimed: "${gt(g.name)}" (Region: ${g.region})
+Description: ${gt(g.desc)}
+Requirements: ${chal.join(' | ')}
+
+REJECT if:
+- No people actively playing a traditional game
+- Selfie, landscape, food, random objects, screenshots  
+- Dark/blurry, activity unclear
+- Wrong game shown (different from "${gt(g.name)}")
+- Missing characteristic equipment/activity for this game
+
+APPROVE if:
+- Clearly shows people playing the correct game
+- Sufficient visual evidence of this specific game
+
+Respond ONLY in JSON (no markdown):
+{"approved":boolean,"bonusPoints":20_to_80_if_ok_else_0,"feedback":"2-3 sentences in ${langName}: if rejected explain WHY and HOW to retake; if approved praise SPECIFICALLY what you see","detectedContent":"brief description of what AI actually sees"}`}];
+  // Build Gemini parts: text first, then images
+  const parts=[{text:content[0].text}];
+  photos.forEach(p=>{
+    const b=p.split(',')[1],m=(p.match(/data:([^;]+);/)||[])[1]||'image/jpeg';
+    parts.push({inlineData:{mimeType:m,data:b}});
+  });
+  let res;
+  try{
+    const GEMINI_KEY='AIzaSyD7l1SB49ZD_VcbZpAM1ESQ354wS0LmLh0';
+    const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_KEY}`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({contents:[{parts}],generationConfig:{maxOutputTokens:500,temperature:0.2}})
+    });
+    const d=await r.json();
+    const txt=d.candidates?.[0]?.content?.parts?.[0]?.text||'';
+    res=JSON.parse(txt.replace(/```json|```/g,'').trim());
+  }catch(e){res={approved:false,bonusPoints:0,feedback:'AI connection error. Check your network and try again.',detectedContent:'Error'};}
+  aiD.style.display='none';aiR.style.display='block';
+  if(res.approved){
+    const tot=g.pts+(photos.length*50)+res.bonusPoints;pendPts=tot;
+    aiR.className='ar ok';
+    document.getElementById('abadge').className='abadge ok';document.getElementById('abadge').textContent='✓ APPROVED';
+    document.getElementById('apts').textContent='+'+tot+' '+t('pts');
+    document.getElementById('atxt').textContent=res.feedback+(res.detectedContent?'\n\nAI detected: '+res.detectedContent:'');
+    mok.style.display='block';document.getElementById('aiTitle').textContent='🎉 Valid photo!';
+    document.getElementById('aiSub').textContent='AI confirmed the activity in your photo';
+  }else{
+    pendPts=0;aiR.className='ar fail';
+    document.getElementById('abadge').className='abadge fail';document.getElementById('abadge').textContent='✗ REJECTED';
+    document.getElementById('apts').textContent='0 '+t('pts');
+    document.getElementById('atxt').textContent=res.feedback+(res.detectedContent?'\n\nAI saw: '+res.detectedContent:'');
+    mok.style.display='none';document.getElementById('aiTitle').textContent='Photo not valid';
+    document.getElementById('aiSub').textContent='Read requirements and retake';
+  }
+}
+async function claimPts(){
+  P.pts+=pendPts;P.photos+=pendPics.filter(Boolean).length;
+  if(pendGame&&!P.played.includes(pendGame))P.played.push(pendGame);
+  pendPics=[null,null,null];pendGame=null;
+  await pushScore();closeModal('mAI');renderSlots();updateHomeUI();buildGameList();buildGameSelect();confetti();
+  toast('🎊 +'+pendPts+' '+t('pts')+'! Rankings updated!');pendPts=0;document.getElementById('gamesel').value='';
+}
+
+/* ── HOME UI ── */
+function updateHomeUI(){
+  document.getElementById('hav').textContent=P.ini||'?';
+  document.getElementById('hpts').textContent=P.pts.toLocaleString();
+  document.getElementById('hbar').style.width=Math.min((P.pts/5000)*100,100)+'%';
+  document.getElementById('hsub').textContent=P.played.length+' / '+Object.keys(G).length+' '+t('games').toLowerCase();
+}
+
+/* ── LEADERBOARD ── */
+async function renderLB(){
+  document.getElementById('podium').innerHTML='<div class="lb-msg">Connecting...</div>';
+  document.getElementById('lblist').innerHTML='<div class="lb-msg">Loading rankings...</div>';
+  const{data:rows}=await SB.from('leaderboard').select('*').order('points',{ascending:false});
+  const entries=(rows||[]).map(r=>({...r,isMe:r.user_id===CU?.id}));
+  if(!entries.find(e=>e.isMe)){entries.push({name:P.name,city:P.country,points:P.pts,games_played:P.played.length,isMe:true});entries.sort((a,b)=>b.points-a.points);}
+  const now=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  document.getElementById('lbUpdated').textContent=entries.length+' players · Updated '+now;
+  const colors=['#B8860B','#2D5A1B','#6B4F32','#2D6B8B','#6B2020','#4A2D7A'];
+  const top3=entries.slice(0,3),rest=entries.slice(3);
+  const ord=[top3[1],top3[0],top3[2]].filter(Boolean),pc=['p2','p1','p3'],pr=['🥈','🥇','🥉'];
+  document.getElementById('podium').innerHTML=ord.length?ord.map((p,i)=>`
+    <div class="pi ${pc[i]}"><div style="font-size:16px">${pr[i]}</div>
+    <div class="pav" style="background:${p.isMe?'var(--gd2)':colors[i]}">${p.isMe?'⭐':ini(p.name)}</div>
+    <div class="pnm">${p.name}</div><div class="psc">${(p.points||0).toLocaleString()}</div></div>`).join('')
+    :'<div style="color:rgba(255,255,255,.6);font-size:13px;width:100%;text-align:center">Be the first! 🏆</div>';
+  document.getElementById('lblist').innerHTML=rest.length?rest.map((p,i)=>`
+    <div class="lbrow${p.isMe?' me':''}">
+      <div class="lbr">${i+4}</div>
+      <div class="lbav" style="background:${p.isMe?'var(--pp)':'rgba(0,0,0,.05)'};color:${p.isMe?'var(--p)':'var(--t2)'}">${p.isMe?'⭐':ini(p.name)}</div>
+      <div class="lbi"><div class="lbn">${p.name}${p.isMe?'<span class="lbye">You</span>':''}</div>
+      <div class="lbg">${p.games_played||0} games · ${p.city||''}</div></div>
+      <div class="lbsc">${(p.points||0).toLocaleString()}</div>
+    </div>`).join(''):'<div class="lb-msg">Invite friends to compete! 🏆</div>';
+}
+
+/* ── PROFILE ── */
+async function renderProfile(){
+  document.getElementById('prav').textContent=P.ini||'?';
+  document.getElementById('prnm').textContent=P.name||'Player';
+  document.getElementById('prsi').textContent=(P.country||'World')+' · '+(CU?.email||'');
+  document.getElementById('siEmailDisp').textContent=CU?.email||'—';
+  document.getElementById('sppts').textContent=P.pts.toLocaleString();
+  document.getElementById('spgm').textContent=P.played.length;
+  document.getElementById('spph').textContent=P.photos;
+  document.getElementById('curLangDisp').textContent=LANG_NAMES[lang]||'English';
+  const tiers=t('tiers');
+  let ti=0;if(P.pts>=5000)ti=4;else if(P.pts>=2000)ti=3;else if(P.pts>=800)ti=2;else if(P.pts>=200)ti=1;
+  document.getElementById('prtier').textContent=Array.isArray(tiers)?tiers[ti]:tiers;
+  const{data:rows}=await SB.from('leaderboard').select('user_id,points').order('points',{ascending:false});
+  const rk=(rows||[]).findIndex(r=>r.user_id===CU?.id)+1;
+  document.getElementById('sprk').textContent='#'+(rk>0?rk:'–');
+  const badges=[
+    ...Object.entries(G).map(([id,g])=>({icon:g.icon,lbl:gt(g.name),u:P.played.includes(id)})),
+    {icon:'📸',lbl:'5 Photos',u:P.photos>=5},{icon:'🌟',lbl:'10 Photos',u:P.photos>=10},
+    {icon:'🏆',lbl:'Top 3',u:rk>0&&rk<=3},
+    {icon:'🌍',lbl:'World Traveller',u:new Set(Object.entries(G).filter(([id])=>P.played.includes(id)).map(([,g])=>g.region)).size>=4},
+  ];
+  document.getElementById('bdgrow').innerHTML=badges.map(b=>`<div class="bc${b.u?'':' lk'}" title="${b.lbl}">${b.icon}</div>`).join('');
+  applyLang();
+}
+
+/* ── UTILS ── */
+function openModal(id){document.getElementById(id).classList.add('open');}
+function closeModal(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.mbg').forEach(el=>{el.addEventListener('click',function(e){if(e.target===this)closeModal(this.id);});});
+function toast(msg){
+  const el=document.getElementById('toast');
+  el.textContent=msg;el.style.opacity='1';el.style.transform='translateX(-50%) translateY(0)';
+  clearTimeout(toastTm);toastTm=setTimeout(()=>{el.style.opacity='0';el.style.transform='translateX(-50%) translateY(14px)';},3200);
+}
+function confetti(){
+  ['#B8860B','#2D5A1B','#D4A017','#8FBC6A','#6B4F32','#F0C040'].forEach(c=>{
+    for(let j=0;j<7;j++){
+      const el=document.createElement('div');el.className='cf';
+      el.style.cssText=`left:${8+Math.random()*84}vw;top:-8px;background:${c};width:${5+Math.random()*8}px;height:${5+Math.random()*8}px;border-radius:${Math.random()>.5?'50%':'2px'};animation-delay:${Math.random()*.65}s;animation-duration:${1.2+Math.random()*.9}s`;
+      document.body.appendChild(el);setTimeout(()=>el.remove(),2800);
+    }
+  });
+}
+</script>
+</body>
+</html>
