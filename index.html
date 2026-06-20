@@ -1,0 +1,897 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>HeritageGames — Hành Trình Di Sản</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+/* ════════════════════════════════════════════════════
+   PIXEL ART DESIGN SYSTEM
+════════════════════════════════════════════════════ */
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;image-rendering:pixelated;image-rendering:crisp-edges}
+:root{
+  /* Pixel palette - retro 16-bit ocean/island theme */
+  --sea-deep:#0a3d62;
+  --sea-mid:#1976a8;
+  --sea-light:#4fc3e8;
+  --sea-foam:#bdf0f5;
+  --sand:#f4d58d;
+  --sand-dark:#d4a857;
+  --leaf:#4a8c3a;
+  --leaf-dark:#2d5a1f;
+  --wood:#8b5a2b;
+  --wood-dark:#5e3a1a;
+  --stone:#7a7a7a;
+  --ui-bg:#fef9ec;
+  --ui-bg-dark:#2b2438;
+  --ui-border:#3a2e4a;
+  --ui-accent:#ff7a45;
+  --ui-accent2:#ffc24b;
+  --ui-good:#5cc95c;
+  --ui-bad:#e85d5d;
+  --text-dark:#2b2438;
+  --text-light:#fef9ec;
+  --shadow-px:#1a1426;
+  --r-pixel:0px;      /* sprites stay sharp */
+  --r-ui:18px;        /* UI elements are very rounded per request */
+  --r-ui-sm:12px;
+  --font-pixel:'Press Start 2P',monospace;
+  --font-vt:'VT323',monospace;
+  --font-ui:'Silkscreen',monospace;
+}
+html,body{min-height:100%;overflow:hidden;background:var(--sea-deep);font-family:var(--font-ui);color:var(--text-dark)}
+#app{position:fixed;inset:0;overflow:hidden}
+
+/* ── Pixel-perfect button base (very rounded per request) ── */
+.pbtn{
+  font-family:var(--font-ui);
+  font-weight:700;
+  font-size:14px;
+  letter-spacing:.5px;
+  border:4px solid var(--ui-border);
+  border-radius:var(--r-ui);
+  padding:14px 28px;
+  cursor:pointer;
+  position:relative;
+  box-shadow:0 6px 0 var(--shadow-px), 0 6px 0 var(--shadow-px);
+  transition:transform .08s, box-shadow .08s;
+  user-select:none;
+  text-transform:uppercase;
+}
+.pbtn:active{transform:translateY(4px);box-shadow:0 2px 0 var(--shadow-px)}
+.pbtn-primary{background:var(--ui-accent);color:#fff}
+.pbtn-gold{background:var(--ui-accent2);color:var(--text-dark)}
+.pbtn-good{background:var(--ui-good);color:#fff}
+.pbtn-ghost{background:var(--ui-bg);color:var(--text-dark)}
+.pbtn-sm{padding:8px 16px;font-size:11px;border-width:3px;border-radius:var(--r-ui-sm)}
+.pbtn:disabled{opacity:.5;cursor:not-allowed;transform:none!important}
+
+/* ── Panel (very rounded, thick pixel border) ── */
+.ppanel{
+  background:var(--ui-bg);
+  border:5px solid var(--ui-border);
+  border-radius:var(--r-ui);
+  box-shadow:0 8px 0 var(--shadow-px), 0 10px 24px rgba(0,0,0,.35);
+  padding:20px;
+}
+.ppanel-dark{background:var(--ui-bg-dark);color:var(--text-light)}
+
+/* ── Pixel text styles ── */
+.ptitle{font-family:var(--font-pixel);font-size:20px;line-height:1.6;color:var(--text-dark);text-shadow:2px 2px 0 rgba(0,0,0,.15)}
+.ptitle-lg{font-size:28px}
+.psub{font-family:var(--font-vt);font-size:18px;color:var(--text-dark);opacity:.85}
+
+/* ════════════════════════════════════════════════════
+   SCREENS
+════════════════════════════════════════════════════ */
+.screen{position:absolute;inset:0;display:none;align-items:center;justify-content:center}
+.screen.active{display:flex}
+
+/* ── LOADING / BOOT ── */
+#screen-boot{background:linear-gradient(180deg,var(--sea-deep),#051f33)}
+.boot-wrap{text-align:center;color:#fff}
+.boot-logo{font-family:var(--font-pixel);font-size:32px;margin-bottom:30px;animation:bootPulse 1.6s ease-in-out infinite;text-shadow:4px 4px 0 var(--shadow-px)}
+@keyframes bootPulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.7;transform:scale(1.04)}}
+.boot-bar-wrap{width:280px;height:24px;background:var(--ui-bg-dark);border:4px solid #fff;border-radius:var(--r-ui-sm);overflow:hidden;margin:0 auto}
+.boot-bar-fill{height:100%;background:var(--ui-accent2);width:0%;transition:width .3s}
+.boot-wave{position:absolute;bottom:0;left:0;right:0;height:60px;background:repeating-linear-gradient(90deg,var(--sea-mid) 0 20px,var(--sea-light) 20px 40px);animation:waveScroll 2s linear infinite;opacity:.5}
+@keyframes waveScroll{from{background-position-x:0}to{background-position-x:40px}}
+
+/* ════════════════════════════════════════════════════
+   AUTH SCREEN
+════════════════════════════════════════════════════ */
+#screen-auth{
+  background:linear-gradient(180deg,#1976a8 0%,#0a3d62 55%,#062a42 100%);
+  position:relative;
+  overflow:hidden;
+}
+.auth-clouds{position:absolute;top:0;left:0;right:0;height:200px;background-image:
+  radial-gradient(ellipse 60px 24px at 15% 30%, rgba(255,255,255,.5) 0%, transparent 70%),
+  radial-gradient(ellipse 80px 30px at 70% 50%, rgba(255,255,255,.4) 0%, transparent 70%),
+  radial-gradient(ellipse 50px 20px at 90% 20%, rgba(255,255,255,.45) 0%, transparent 70%);
+  animation:cloudDrift 40s linear infinite;
+}
+@keyframes cloudDrift{from{background-position-x:0}to{background-position-x:-400px}}
+.auth-island-decor{position:absolute;bottom:0;width:100%;height:140px;
+  background:linear-gradient(180deg,var(--leaf) 0%,var(--leaf-dark) 100%);
+  clip-path:polygon(0% 100%, 0% 60%, 10% 40%, 25% 55%, 40% 30%, 55% 50%, 70% 25%, 85% 45%, 100% 35%, 100% 100%);
+  opacity:.85;
+}
+.auth-card{
+  position:relative;z-index:2;
+  width:min(380px,90vw);
+  text-align:center;
+}
+.auth-logo-pixel{font-size:64px;margin-bottom:6px;filter:drop-shadow(3px 3px 0 rgba(0,0,0,.3));animation:logoFloat 3s ease-in-out infinite}
+@keyframes logoFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.auth-title{font-family:var(--font-pixel);font-size:22px;color:#fff;text-shadow:3px 3px 0 var(--shadow-px);margin-bottom:6px}
+.auth-tagline{font-family:var(--font-vt);font-size:16px;color:var(--sea-foam);margin-bottom:20px}
+.auth-tabs{display:flex;gap:8px;margin-bottom:14px}
+.auth-tab{flex:1;padding:10px;border:4px solid var(--ui-border);border-radius:var(--r-ui-sm);background:rgba(255,255,255,.15);color:#fff;font-family:var(--font-ui);font-weight:700;font-size:13px;cursor:pointer;text-transform:uppercase}
+.auth-tab.active{background:var(--ui-accent2);color:var(--text-dark)}
+.auth-field{margin-bottom:10px;text-align:left}
+.auth-field label{display:block;font-family:var(--font-ui);font-size:10px;color:var(--sea-foam);margin-bottom:4px;letter-spacing:1px}
+.auth-field input{width:100%;padding:12px 14px;border:4px solid var(--ui-border);border-radius:var(--r-ui-sm);font-family:var(--font-vt);font-size:17px;background:#fff;color:var(--text-dark);outline:none}
+.auth-field input:focus{border-color:var(--ui-accent2)}
+.auth-err{display:none;background:var(--ui-bad);color:#fff;padding:8px 12px;border-radius:var(--r-ui-sm);font-size:11px;margin-bottom:10px;font-family:var(--font-ui);border:3px solid var(--ui-border)}
+.auth-err.show{display:block}
+.auth-submit{width:100%;margin-top:6px}
+.auth-forgot{display:block;margin-top:12px;color:var(--sea-foam);font-size:12px;text-decoration:underline;cursor:pointer;font-family:var(--font-vt)}
+
+/* ════════════════════════════════════════════════════
+   AVATAR CREATOR
+════════════════════════════════════════════════════ */
+#screen-avatar{background:linear-gradient(180deg,#3a2e4a,#1f1830)}
+.avc-wrap{width:min(440px,92vw);text-align:center}
+.avc-title{font-family:var(--font-pixel);font-size:18px;color:#fff;margin-bottom:4px;text-shadow:2px 2px 0 var(--shadow-px)}
+.avc-sub{font-family:var(--font-vt);font-size:15px;color:#bda8d4;margin-bottom:16px}
+.avc-stage{
+  width:160px;height:160px;margin:0 auto 18px;
+  background:radial-gradient(circle, rgba(255,255,255,.08) 0%, transparent 70%);
+  border:5px solid var(--ui-border);border-radius:var(--r-ui);
+  background-color:#252035;
+  display:flex;align-items:center;justify-content:center;
+  position:relative;
+  box-shadow:inset 0 0 30px rgba(0,0,0,.4);
+}
+.avc-sprite{font-size:90px;filter:drop-shadow(3px 3px 0 rgba(0,0,0,.4));transition:transform .15s}
+.avc-stage.bump .avc-sprite{animation:avcBump .3s}
+@keyframes avcBump{0%,100%{transform:scale(1)}50%{transform:scale(1.15) rotate(-3deg)}}
+.avc-rows{display:flex;flex-direction:column;gap:10px;margin-bottom:18px}
+.avc-row{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.06);border:3px solid var(--ui-border);border-radius:var(--r-ui-sm);padding:8px 10px}
+.avc-row-label{font-family:var(--font-ui);font-size:10px;color:#bda8d4;width:60px;text-align:left;text-transform:uppercase;flex-shrink:0}
+.avc-swatches{display:flex;gap:6px;flex:1;overflow-x:auto;padding:2px}
+.avc-swatch{width:30px;height:30px;border-radius:50%;border:3px solid var(--ui-border);cursor:pointer;flex-shrink:0;transition:transform .12s}
+.avc-swatch.sel{border-color:var(--ui-accent2);transform:scale(1.18)}
+.avc-swatch.skin-emoji,.avc-swatch.hat-emoji{display:flex;align-items:center;justify-content:center;font-size:16px;background:#3a3050}
+.avc-nameinput{width:100%;padding:12px 14px;border:4px solid var(--ui-border);border-radius:var(--r-ui-sm);font-family:var(--font-vt);font-size:17px;text-align:center;margin-bottom:14px;outline:none}
+
+/* ════════════════════════════════════════════════════
+   CUTSCENE OVERLAY
+════════════════════════════════════════════════════ */
+#cutscene{position:fixed;inset:0;background:#000;z-index:9000;display:none;align-items:center;justify-content:center;overflow:hidden}
+#cutscene.show{display:flex}
+.cs-bars{position:absolute;left:0;right:0;height:60px;background:#000;z-index:2}
+.cs-bar-top{top:0}
+.cs-bar-bot{bottom:0}
+.cs-scene{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .8s}
+.cs-scene.show{opacity:1}
+.cs-bg{position:absolute;inset:0;background-size:cover}
+.cs-content{position:relative;z-index:1;text-align:center;max-width:600px;padding:0 30px}
+.cs-emoji-big{font-size:100px;margin-bottom:20px;filter:drop-shadow(4px 4px 0 rgba(0,0,0,.5));animation:csFloat 3s ease-in-out infinite}
+@keyframes csFloat{0%,100%{transform:translateY(0) rotate(0)}50%{transform:translateY(-14px) rotate(2deg)}}
+.cs-text{font-family:var(--font-vt);font-size:22px;color:#fff;line-height:1.6;text-shadow:2px 2px 0 rgba(0,0,0,.6)}
+.cs-text-title{font-family:var(--font-pixel);font-size:24px;color:#ffc24b;margin-bottom:14px;text-shadow:3px 3px 0 rgba(0,0,0,.6)}
+.cs-skip{position:absolute;bottom:75px;right:24px;z-index:3;font-family:var(--font-ui);font-size:11px;color:rgba(255,255,255,.6);cursor:pointer;border:2px solid rgba(255,255,255,.3);padding:8px 16px;border-radius:var(--r-ui-sm)}
+.cs-skip:hover{color:#fff;border-color:#fff}
+.cs-dots{position:absolute;bottom:75px;left:50%;transform:translateX(-50%);z-index:3;display:flex;gap:6px}
+.cs-dot{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.3)}
+.cs-dot.active{background:#fff}
+
+/* ════════════════════════════════════════════════════
+   WORLD MAP (SANDBOX SEA)
+════════════════════════════════════════════════════ */
+#screen-world{background:var(--sea-deep);overflow:hidden}
+.world-viewport{position:absolute;inset:0;overflow:hidden}
+.world-canvas-wrap{position:absolute;top:0;left:0;transform-origin:0 0;}
+#worldCanvas{display:block;image-rendering:pixelated}
+
+/* Top HUD */
+.hud-top{position:absolute;top:0;left:0;right:0;z-index:50;display:flex;align-items:center;justify-content:space-between;padding:12px 14px;pointer-events:none}
+.hud-pill{pointer-events:all;background:var(--ui-bg);border:4px solid var(--ui-border);border-radius:var(--r-ui);padding:8px 16px;display:flex;align-items:center;gap:8px;box-shadow:0 4px 0 var(--shadow-px)}
+.hud-pill-icon{font-size:18px}
+.hud-pill-val{font-family:var(--font-pixel);font-size:13px;color:var(--text-dark)}
+.hud-right{display:flex;gap:8px;align-items:center}
+.hud-btn-round{pointer-events:all;width:44px;height:44px;border-radius:50%;border:4px solid var(--ui-border);background:var(--ui-bg);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer;box-shadow:0 4px 0 var(--shadow-px)}
+.hud-btn-round:active{transform:translateY(3px);box-shadow:0 1px 0 var(--shadow-px)}
+
+/* Mini rank button - small per request */
+.hud-rank-mini{pointer-events:all;position:absolute;top:70px;right:14px;width:38px;height:38px;border-radius:50%;border:3px solid var(--ui-border);background:var(--ui-accent2);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer;box-shadow:0 3px 0 var(--shadow-px);z-index:50}
+
+/* Virtual joystick for boat steering */
+#joystick-zone{position:absolute;bottom:30px;left:30px;width:120px;height:120px;z-index:60;touch-action:none}
+.joy-base{width:120px;height:120px;border-radius:50%;background:rgba(255,255,255,.15);border:4px solid rgba(255,255,255,.4);position:relative;backdrop-filter:blur(2px)}
+.joy-stick{width:50px;height:50px;border-radius:50%;background:var(--ui-accent2);border:4px solid var(--ui-border);position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);box-shadow:0 4px 0 rgba(0,0,0,.3);transition:transform .05s}
+
+/* Speed boost button */
+#boost-btn{position:absolute;bottom:40px;right:30px;width:80px;height:80px;border-radius:50%;background:var(--ui-accent);border:4px solid var(--ui-border);display:flex;align-items:center;justify-content:center;font-size:28px;z-index:60;box-shadow:0 5px 0 var(--shadow-px);cursor:pointer}
+#boost-btn:active{transform:translateY(4px);box-shadow:0 1px 0 var(--shadow-px)}
+
+/* Island label popup when near */
+#island-prompt{position:absolute;bottom:140px;left:50%;transform:translateX(-50%) translateY(20px);z-index:55;opacity:0;pointer-events:none;transition:all .25s}
+#island-prompt.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.island-prompt-card{background:var(--ui-bg);border:4px solid var(--ui-border);border-radius:var(--r-ui);padding:12px 20px;text-align:center;box-shadow:0 5px 0 var(--shadow-px)}
+.island-prompt-name{font-family:var(--font-pixel);font-size:13px;color:var(--text-dark);margin-bottom:6px}
+.island-prompt-hint{font-family:var(--font-vt);font-size:14px;color:var(--text-dark);opacity:.7}
+
+/* Minimap */
+#minimap{position:absolute;top:70px;left:14px;width:90px;height:90px;border-radius:50%;border:4px solid var(--ui-border);background:var(--sea-mid);overflow:hidden;z-index:50;box-shadow:0 4px 0 var(--shadow-px)}
+#minimapCanvas{width:100%;height:100%}
+
+@media(min-width:769px){
+  #joystick-zone{bottom:40px;left:40px}
+  #boost-btn{bottom:50px;right:40px}
+}
+
+/* Toast */
+#ptoast{position:fixed;bottom:30px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ui-bg-dark);color:#fff;padding:12px 22px;border-radius:var(--r-ui);font-family:var(--font-ui);font-size:12px;z-index:9999;opacity:0;pointer-events:none;transition:all .3s;border:3px solid var(--ui-accent2)}
+#ptoast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+::-webkit-scrollbar{width:0;height:0}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ═══ BOOT / LOADING ═══ -->
+  <div class="screen active" id="screen-boot">
+    <div class="boot-wrap">
+      <div class="boot-logo">🏮 HERITAGE</div>
+      <div class="boot-bar-wrap"><div class="boot-bar-fill" id="bootBar"></div></div>
+      <div style="font-family:var(--font-vt);color:#bdf0f5;margin-top:14px;font-size:14px" id="bootLabel">Đang dựng đảo...</div>
+    </div>
+    <div class="boot-wave"></div>
+  </div>
+
+  <!-- ═══ AUTH ═══ -->
+  <div class="screen" id="screen-auth">
+    <div class="auth-clouds"></div>
+    <div class="auth-island-decor"></div>
+    <div class="auth-card">
+      <div class="auth-logo-pixel">🏝️</div>
+      <div class="auth-title">HERITAGE ISLES</div>
+      <div class="auth-tagline">Hành trình khám phá trò chơi dân gian</div>
+
+      <div class="auth-tabs">
+        <div class="auth-tab active" id="tabSI" onclick="switchAuthTab('si')">Đăng Nhập</div>
+        <div class="auth-tab" id="tabSU" onclick="switchAuthTab('su')">Tạo Mới</div>
+      </div>
+
+      <div class="auth-err" id="authErr"></div>
+
+      <!-- Sign in form -->
+      <div id="formSI">
+        <div class="auth-field"><label>EMAIL</label><input type="email" id="siEmail" placeholder="thuyen@truong.com"></div>
+        <div class="auth-field"><label>MẬT KHẨU</label><input type="password" id="siPass" placeholder="••••••••"></div>
+        <button class="pbtn pbtn-primary auth-submit" id="siBtnEl" onclick="doSignIn()">⚓ Lên Thuyền</button>
+        <span class="auth-forgot" onclick="toast('Liên hệ admin để đặt lại mật khẩu')">Quên mật khẩu?</span>
+      </div>
+
+      <!-- Sign up form -->
+      <div id="formSU" style="display:none">
+        <div class="auth-field"><label>TÊN THUYỀN TRƯỞNG</label><input type="text" id="suName" placeholder="Tên của bạn"></div>
+        <div class="auth-field"><label>EMAIL</label><input type="email" id="suEmail" placeholder="thuyen@truong.com"></div>
+        <div class="auth-field"><label>MẬT KHẨU</label><input type="password" id="suPass" placeholder="Tối thiểu 6 ký tự"></div>
+        <button class="pbtn pbtn-gold auth-submit" id="suBtnEl" onclick="doSignUp()">🏴 Bắt Đầu Hành Trình</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ AVATAR CREATOR ═══ -->
+  <div class="screen" id="screen-avatar">
+    <div class="avc-wrap">
+      <div class="avc-title">TẠO THUYỀN TRƯỞNG</div>
+      <div class="avc-sub">Chọn diện mạo của bạn trước khi ra khơi!</div>
+
+      <div class="avc-stage" id="avcStage">
+        <div class="avc-sprite" id="avcSprite">🧑🏻</div>
+      </div>
+
+      <input class="avc-nameinput" id="avcNickname" placeholder="Đặt tên nhân vật..." maxlength="16">
+
+      <div class="avc-rows">
+        <div class="avc-row">
+          <div class="avc-row-label">Da</div>
+          <div class="avc-swatches" id="avcSkinRow"></div>
+        </div>
+        <div class="avc-row">
+          <div class="avc-row-label">Mũ</div>
+          <div class="avc-swatches" id="avcHatRow"></div>
+        </div>
+        <div class="avc-row">
+          <div class="avc-row-label">Áo</div>
+          <div class="avc-swatches" id="avcShirtRow"></div>
+        </div>
+      </div>
+
+      <button class="pbtn pbtn-good" style="width:100%" onclick="finishAvatarCreation()">✅ Hoàn Tất & Ra Khơi!</button>
+    </div>
+  </div>
+
+  <!-- ═══ WORLD MAP / SANDBOX SEA ═══ -->
+  <div class="screen" id="screen-world">
+    <div class="world-viewport" id="worldViewport">
+      <div class="world-canvas-wrap" id="worldCanvasWrap">
+        <canvas id="worldCanvas" width="2400" height="1600"></canvas>
+      </div>
+    </div>
+
+    <!-- HUD -->
+    <div class="hud-top">
+      <div class="hud-pill">
+        <span class="hud-pill-icon">🏮</span>
+        <span class="hud-pill-val" id="hudPts">0</span>
+      </div>
+      <div class="hud-right">
+        <div class="hud-btn-round" onclick="openProfilePanel()">👤</div>
+        <div class="hud-btn-round" onclick="openMenuPanel()">☰</div>
+      </div>
+    </div>
+    <div class="hud-rank-mini" onclick="openLeaderboardPanel()" title="Xếp Hạng">🏆</div>
+
+    <div id="minimap"><canvas id="minimapCanvas" width="90" height="90"></canvas></div>
+
+    <div id="island-prompt">
+      <div class="island-prompt-card">
+        <div class="island-prompt-name" id="islandPromptName">Miền Bắc</div>
+        <div class="island-prompt-hint">Nhấn để cập bến 🚢</div>
+      </div>
+    </div>
+
+    <!-- Virtual joystick -->
+    <div id="joystick-zone">
+      <div class="joy-base">
+        <div class="joy-stick" id="joyStick"></div>
+      </div>
+    </div>
+    <div id="boost-btn">💨</div>
+  </div>
+
+  <!-- ═══ CUTSCENE OVERLAY ═══ -->
+  <div id="cutscene">
+    <div class="cs-bars cs-bar-top"></div>
+    <div class="cs-bars cs-bar-bot"></div>
+    <div id="csScenesWrap"></div>
+    <div class="cs-dots" id="csDots"></div>
+    <div class="cs-skip" onclick="skipCutscene()">BỎ QUA ▶▶</div>
+  </div>
+
+  <div id="ptoast"></div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════════════
+   CONFIG (preserved from previous build)
+════════════════════════════════════════════════════ */
+const {createClient}=supabase;
+const SB=createClient('https://pudsnbizkihwxpeyasis.supabase.co','eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InB1ZHNuYml6a2lod3hwZXlhc2lzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA3NDE3ODcsImV4cCI6MjA5NjMxNzc4N30.KR8b3qSbRyXxRce9x8UUBK0oGd7bje7qZ0BT4xmKu6A');
+const WORKER='https://heritagegames-ai.lacnka.workers.dev';
+const OVR='hg@ovr.vg';
+
+let CU=null; // current Supabase user
+let P={name:'',pts:0,played:[],avatar:null}; // local player state
+
+function toast(msg){
+  const el=document.getElementById('ptoast');
+  el.textContent=msg;el.classList.add('show');
+  clearTimeout(window._toastT);
+  window._toastT=setTimeout(()=>el.classList.remove('show'),2600);
+}
+
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+/* ════════════════════════════════════════════════════
+   BOOT SEQUENCE
+════════════════════════════════════════════════════ */
+const bootMessages=['Đang dựng đảo...','Đang chèo thuyền...','Đang vẽ bản đồ...','Đang chuẩn bị hành trình...'];
+let bootPct=0;
+function runBoot(){
+  const bar=document.getElementById('bootBar');
+  const label=document.getElementById('bootLabel');
+  const iv=setInterval(()=>{
+    bootPct+=Math.random()*18+8;
+    if(bootPct>=100){
+      bootPct=100;
+      bar.style.width='100%';
+      clearInterval(iv);
+      setTimeout(checkSession,300);
+      return;
+    }
+    bar.style.width=bootPct+'%';
+    label.textContent=bootMessages[Math.floor(bootPct/100*bootMessages.length)]||bootMessages[0];
+  },220);
+}
+
+async function checkSession(){
+  const {data}=await SB.auth.getSession();
+  if(data?.session?.user){
+    CU=data.session.user;
+    await loadPlayerProfile();
+    if(P.avatar){
+      showScreen('screen-world');
+      initWorldMap();
+      playCutscene('return'); // welcome back, brief
+    }else{
+      showScreen('screen-avatar');
+      initAvatarCreator();
+    }
+  }else{
+    showScreen('screen-auth');
+  }
+}
+
+async function loadPlayerProfile(){
+  if(!CU)return;
+  const {data}=await SB.from('leaderboard').select('*').eq('user_id',CU.id).single();
+  if(data){
+    P.name=data.name||CU.email;
+    P.pts=data.points||0;
+    P.played=JSON.parse(data.games_played_list||'[]');
+    P.avatar=data.avatar_json?JSON.parse(data.avatar_json):null;
+  }else{
+    P.name=CU.email;P.pts=0;P.played=[];P.avatar=null;
+  }
+}
+
+runBoot();
+
+/* ════════════════════════════════════════════════════
+   AUTH LOGIC
+════════════════════════════════════════════════════ */
+function switchAuthTab(t){
+  document.getElementById('tabSI').classList.toggle('active',t==='si');
+  document.getElementById('tabSU').classList.toggle('active',t==='su');
+  document.getElementById('formSI').style.display=t==='si'?'block':'none';
+  document.getElementById('formSU').style.display=t==='su'?'block':'none';
+  document.getElementById('authErr').classList.remove('show');
+}
+
+function showAuthErr(msg){
+  const e=document.getElementById('authErr');
+  e.textContent=msg;e.classList.add('show');
+}
+
+async function doSignIn(){
+  const em=document.getElementById('siEmail').value.trim();
+  const pw=document.getElementById('siPass').value;
+  if(!em||!pw){showAuthErr('Vui lòng nhập email và mật khẩu.');return;}
+  const btn=document.getElementById('siBtnEl');
+  btn.disabled=true;btn.textContent='...';
+  const {data,error}=await SB.auth.signInWithPassword({email:em,password:pw});
+  btn.disabled=false;btn.textContent='⚓ Lên Thuyền';
+  if(error){showAuthErr('Email hoặc mật khẩu không đúng.');return;}
+  CU=data.user;
+  await loadPlayerProfile();
+  if(P.avatar){
+    showScreen('screen-world');
+    initWorldMap();
+  }else{
+    showScreen('screen-avatar');
+    initAvatarCreator();
+  }
+}
+
+async function doSignUp(){
+  const name=document.getElementById('suName').value.trim();
+  const em=document.getElementById('suEmail').value.trim();
+  const pw=document.getElementById('suPass').value;
+  if(!name||!em||!pw){showAuthErr('Vui lòng điền đầy đủ thông tin.');return;}
+  if(pw.length<6){showAuthErr('Mật khẩu cần ít nhất 6 ký tự.');return;}
+  const btn=document.getElementById('suBtnEl');
+  btn.disabled=true;btn.textContent='...';
+  const {data,error}=await SB.auth.signUp({email:em,password:pw});
+  btn.disabled=false;btn.textContent='🏴 Bắt Đầu Hành Trình';
+  if(error){showAuthErr(error.message.includes('already')?'Email đã được sử dụng.':'Lỗi đăng ký. Thử lại nhé!');return;}
+  CU=data.user;
+  P.name=name;P.pts=0;P.played=[];P.avatar=null;
+  // create initial leaderboard row
+  await SB.from('leaderboard').upsert({user_id:CU.id,name:name,points:0,games_played_list:'[]'});
+  showScreen('screen-avatar');
+  initAvatarCreator();
+}
+
+/* ════════════════════════════════════════════════════
+   AVATAR CREATOR
+════════════════════════════════════════════════════ */
+const AVC_SKINS=['🧑🏻','🧑🏼','🧑🏽','🧑🏾','🧑🏿'];
+const AVC_HATS=['😀','🎩','👒','⛑️','🧢','👑'];
+const AVC_SHIRTS=[
+  {name:'red',color:'#e85d5d'},
+  {name:'blue',color:'#4fc3e8'},
+  {name:'green',color:'#5cc95c'},
+  {name:'yellow',color:'#ffc24b'},
+  {name:'purple',color:'#a679d4'},
+];
+let avcState={skin:0,hat:0,shirt:0};
+
+function initAvatarCreator(){
+  avcState={skin:0,hat:0,shirt:0};
+  const skinRow=document.getElementById('avcSkinRow');
+  skinRow.innerHTML=AVC_SKINS.map((s,i)=>`<div class="avc-swatch skin-emoji ${i===0?'sel':''}" data-i="${i}" onclick="avcPick('skin',${i})">${s}</div>`).join('');
+
+  const hatRow=document.getElementById('avcHatRow');
+  hatRow.innerHTML=AVC_HATS.map((h,i)=>`<div class="avc-swatch hat-emoji ${i===0?'sel':''}" data-i="${i}" onclick="avcPick('hat',${i})">${h==='😀'?'🚫':h}</div>`).join('');
+
+  const shirtRow=document.getElementById('avcShirtRow');
+  shirtRow.innerHTML=AVC_SHIRTS.map((s,i)=>`<div class="avc-swatch ${i===0?'sel':''}" data-i="${i}" style="background:${s.color}" onclick="avcPick('shirt',${i})"></div>`).join('');
+
+  document.getElementById('avcNickname').value=P.name||'';
+  renderAvcSprite();
+}
+
+function avcPick(type,idx){
+  avcState[type]=idx;
+  document.querySelectorAll(`#avc${type.charAt(0).toUpperCase()+type.slice(1)}Row .avc-swatch`).forEach((el,i)=>{
+    el.classList.toggle('sel',i===idx);
+  });
+  const stage=document.getElementById('avcStage');
+  stage.classList.add('bump');
+  setTimeout(()=>stage.classList.remove('bump'),300);
+  renderAvcSprite();
+}
+
+function renderAvcSprite(){
+  const skin=AVC_SKINS[avcState.skin];
+  const hat=AVC_HATS[avcState.hat];
+  const shirt=AVC_SHIRTS[avcState.shirt];
+  const sprite=document.getElementById('avcSprite');
+  sprite.innerHTML=`<div style="position:relative;display:inline-block">
+    <div style="font-size:90px">${skin}</div>
+    ${avcState.hat>0?`<div style="position:absolute;top:-22px;left:50%;transform:translateX(-50%);font-size:40px">${hat}</div>`:''}
+    <div style="position:absolute;bottom:-6px;left:50%;transform:translateX(-50%);width:60px;height:14px;background:${shirt.color};border-radius:8px;border:2px solid var(--ui-border)"></div>
+  </div>`;
+}
+
+async function finishAvatarCreation(){
+  const nickname=document.getElementById('avcNickname').value.trim();
+  if(!nickname){toast('⚠️ Hãy đặt tên cho thuyền trưởng!');return;}
+  P.name=nickname;
+  P.avatar={skin:avcState.skin,hat:avcState.hat,shirt:avcState.shirt};
+  await SB.from('leaderboard').upsert({
+    user_id:CU.id,name:nickname,points:P.pts,
+    games_played_list:JSON.stringify(P.played),
+    avatar_json:JSON.stringify(P.avatar)
+  });
+  playCutscene('intro');
+}
+
+/* ════════════════════════════════════════════════════
+   CUTSCENE SYSTEM
+════════════════════════════════════════════════════ */
+const CUTSCENES={
+  intro:[
+    {emoji:'🌊',title:'',text:'Biển cả rộng lớn đang chờ đón bạn...'},
+    {emoji:'🏝️',title:'HERITAGE ISLES',text:'Nơi những trò chơi dân gian Việt Nam được lưu giữ qua từng thế hệ.'},
+    {emoji:'⛵',title:'',text:'Hãy lên thuyền, giương cánh buồm, và bắt đầu hành trình khám phá!'},
+  ],
+  return:[
+    {emoji:'⚓',title:'',text:'Chào mừng trở lại, thuyền trưởng!'},
+  ],
+  island_north:[
+    {emoji:'🏯',title:'MIỀN BẮC',text:'Vùng đất của Ô Ăn Quan, Kéo Co và những trò chơi cổ xưa nhất.'},
+  ],
+  island_central:[
+    {emoji:'🌊',title:'MIỀN TRUNG',text:'Nơi điệu hát Bài Chòi vang lên giữa những đồi cát trắng.'},
+  ],
+  island_south:[
+    {emoji:'🌴',title:'MIỀN NAM',text:'Sông nước hiền hoà, quê hương của Đua Ghe Ngo và Múa Rối Nước.'},
+  ],
+  levelup:[
+    {emoji:'⭐',title:'LÊN CẤP!',text:'Bạn đã trở thành một nhà thám hiểm văn hoá thực thụ!'},
+  ],
+};
+
+let csQueue=[],csIdx=0,csOnDone=null;
+
+function playCutscene(key,onDone){
+  csQueue=CUTSCENES[key]||[];
+  csIdx=0;
+  csOnDone=onDone||null;
+  if(!csQueue.length){if(csOnDone)csOnDone();return;}
+  const wrap=document.getElementById('csScenesWrap');
+  wrap.innerHTML=csQueue.map((s,i)=>`
+    <div class="cs-scene" data-i="${i}">
+      <div class="cs-content">
+        <div class="cs-emoji-big">${s.emoji}</div>
+        ${s.title?`<div class="cs-text-title">${s.title}</div>`:''}
+        <div class="cs-text">${s.text}</div>
+      </div>
+    </div>`).join('');
+  const dots=document.getElementById('csDots');
+  dots.innerHTML=csQueue.map((_,i)=>`<div class="cs-dot" data-i="${i}"></div>`).join('');
+  document.getElementById('cutscene').classList.add('show');
+  showCsScene(0);
+  document.getElementById('cutscene').onclick=(e)=>{
+    if(e.target.classList.contains('cs-skip'))return;
+    advanceCutscene();
+  };
+}
+
+function showCsScene(i){
+  document.querySelectorAll('.cs-scene').forEach(el=>el.classList.toggle('show',+el.dataset.i===i));
+  document.querySelectorAll('.cs-dot').forEach(el=>el.classList.toggle('active',+el.dataset.i===i));
+}
+
+function advanceCutscene(){
+  csIdx++;
+  if(csIdx>=csQueue.length){endCutscene();return;}
+  showCsScene(csIdx);
+}
+
+function skipCutscene(){endCutscene();}
+
+function endCutscene(){
+  document.getElementById('cutscene').classList.remove('show');
+  if(csOnDone){const fn=csOnDone;csOnDone=null;fn();}
+  else{
+    // default: go to world if not already there
+    if(!document.getElementById('screen-world').classList.contains('active')){
+      showScreen('screen-world');
+      initWorldMap();
+    }
+  }
+}
+
+/* ════════════════════════════════════════════════════
+   WORLD MAP — SANDBOX SEA WITH SAILABLE BOAT
+════════════════════════════════════════════════════ */
+const WORLD_W=2400, WORLD_H=1600;
+const ISLANDS=[
+  {id:'north',name:'Miền Bắc',x:500,y:350,r:140,color:'#4a8c3a',cutscene:'island_north'},
+  {id:'central',name:'Miền Trung',x:1300,y:800,r:150,color:'#d4a857',cutscene:'island_central'},
+  {id:'south',name:'Miền Nam',x:1900,y:1250,r:160,color:'#2d8a5a',cutscene:'island_south'},
+];
+let boat={x:200,y:200,angle:0,vx:0,vy:0,speed:0};
+let camera={x:0,y:0,zoom:1};
+let joyVec={x:0,y:0,active:false};
+let nearIsland=null;
+let boostActive=false;
+let worldInited=false;
+let worldCtx=null;
+
+function initWorldMap(){
+  if(worldInited){renderHUD();return;}
+  worldInited=true;
+  worldCtx=document.getElementById('worldCanvas').getContext('2d');
+  setupJoystick();
+  document.getElementById('boost-btn').addEventListener('touchstart',e=>{boostActive=true;});
+  document.getElementById('boost-btn').addEventListener('touchend',e=>{boostActive=false;});
+  document.getElementById('boost-btn').addEventListener('mousedown',e=>{boostActive=true;});
+  document.getElementById('boost-btn').addEventListener('mouseup',e=>{boostActive=false;});
+  document.getElementById('island-prompt').addEventListener('click',()=>{
+    if(nearIsland)arriveAtIsland(nearIsland);
+  });
+  renderHUD();
+  requestAnimationFrame(worldLoop);
+}
+
+function renderHUD(){
+  document.getElementById('hudPts').textContent=P.pts.toLocaleString();
+}
+
+/* ── Virtual joystick input ── */
+function setupJoystick(){
+  const zone=document.getElementById('joystick-zone');
+  const stick=document.getElementById('joyStick');
+  const baseRect=()=>zone.getBoundingClientRect();
+
+  function handleMove(clientX,clientY){
+    const rect=baseRect();
+    const cx=rect.left+rect.width/2, cy=rect.top+rect.height/2;
+    let dx=clientX-cx, dy=clientY-cy;
+    const maxR=45;
+    const dist=Math.min(Math.hypot(dx,dy),maxR);
+    const ang=Math.atan2(dy,dx);
+    const sx=Math.cos(ang)*dist, sy=Math.sin(ang)*dist;
+    stick.style.transform=`translate(${sx-25}px,${sy-25}px)`;
+    joyVec.x=sx/maxR;joyVec.y=sy/maxR;joyVec.active=dist>8;
+  }
+  function resetStick(){
+    stick.style.transform='translate(-50%,-50%)';
+    joyVec.x=0;joyVec.y=0;joyVec.active=false;
+  }
+
+  zone.addEventListener('touchstart',e=>{e.preventDefault();handleMove(e.touches[0].clientX,e.touches[0].clientY);},{passive:false});
+  zone.addEventListener('touchmove',e=>{e.preventDefault();handleMove(e.touches[0].clientX,e.touches[0].clientY);},{passive:false});
+  zone.addEventListener('touchend',resetStick);
+
+  let mouseDown=false;
+  zone.addEventListener('mousedown',e=>{mouseDown=true;handleMove(e.clientX,e.clientY);});
+  window.addEventListener('mousemove',e=>{if(mouseDown)handleMove(e.clientX,e.clientY);});
+  window.addEventListener('mouseup',()=>{mouseDown=false;resetStick();});
+
+  // Keyboard fallback (WASD / arrows)
+  const keys={};
+  window.addEventListener('keydown',e=>{keys[e.key]=true;});
+  window.addEventListener('keyup',e=>{keys[e.key]=false;});
+  window._getKeys=()=>keys;
+}
+
+function worldLoop(){
+  updateBoat();
+  drawWorld();
+  drawMinimap();
+  requestAnimationFrame(worldLoop);
+}
+
+function updateBoat(){
+  const keys=window._getKeys?window._getKeys():{};
+  let inputX=joyVec.x, inputY=joyVec.y, active=joyVec.active;
+  if(keys['ArrowLeft']||keys['a']){inputX=-1;active=true;}
+  if(keys['ArrowRight']||keys['d']){inputX=1;active=true;}
+  if(keys['ArrowUp']||keys['w']){inputY=-1;active=true;}
+  if(keys['ArrowDown']||keys['s']){inputY=1;active=true;}
+
+  const maxSpeed=boostActive?7:3.5;
+  const accel=0.25;
+
+  if(active){
+    const targetAngle=Math.atan2(inputY,inputX);
+    let diff=targetAngle-boat.angle;
+    while(diff>Math.PI)diff-=2*Math.PI;
+    while(diff<-Math.PI)diff+=2*Math.PI;
+    boat.angle+=diff*0.12;
+    boat.speed=Math.min(boat.speed+accel,maxSpeed);
+  }else{
+    boat.speed=Math.max(boat.speed-accel*1.5,0);
+  }
+
+  boat.x+=Math.cos(boat.angle)*boat.speed;
+  boat.y+=Math.sin(boat.angle)*boat.speed;
+  boat.x=Math.max(40,Math.min(WORLD_W-40,boat.x));
+  boat.y=Math.max(40,Math.min(WORLD_H-40,boat.y));
+
+  // camera follows boat
+  camera.x=boat.x;camera.y=boat.y;
+
+  // check island proximity
+  let closest=null,closestDist=Infinity;
+  for(const isl of ISLANDS){
+    const d=Math.hypot(boat.x-isl.x,boat.y-isl.y);
+    if(d<isl.r+60&&d<closestDist){closest=isl;closestDist=d;}
+  }
+  if(closest!==nearIsland){
+    nearIsland=closest;
+    const prompt=document.getElementById('island-prompt');
+    if(nearIsland){
+      document.getElementById('islandPromptName').textContent=nearIsland.name;
+      prompt.classList.add('show');
+    }else{
+      prompt.classList.remove('show');
+    }
+  }
+}
+
+function arriveAtIsland(isl){
+  const visitedKey='visited_'+isl.id;
+  const firstVisit=!P.played.includes(visitedKey);
+  if(firstVisit){
+    P.played.push(visitedKey);
+    playCutscene(isl.cutscene,()=>{
+      openIslandGames(isl);
+    });
+  }else{
+    openIslandGames(isl);
+  }
+}
+
+function openIslandGames(isl){
+  toast('🏝️ Đã cập bến '+isl.name+'! (Danh sách trò chơi sẽ mở ở đây)');
+  // TODO Part 2: open island game-selection panel
+}
+
+function drawWorld(){
+  const ctx=worldCtx;
+  const vw=window.innerWidth, vh=window.innerHeight;
+  const canvas=document.getElementById('worldCanvas');
+  if(canvas.width!==vw||canvas.height!==vh){canvas.width=vw;canvas.height=vh;}
+  ctx.clearRect(0,0,vw,vh);
+
+  // ocean gradient bg
+  const grad=ctx.createLinearGradient(0,0,0,vh);
+  grad.addColorStop(0,'#1976a8');
+  grad.addColorStop(1,'#0a3d62');
+  ctx.fillStyle=grad;
+  ctx.fillRect(0,0,vw,vh);
+
+  // wave pattern (simple animated dots grid for retro feel)
+  const t=Date.now()/600;
+  ctx.fillStyle='rgba(255,255,255,.08)';
+  for(let x=0;x<vw;x+=40){
+    for(let y=0;y<vh;y+=40){
+      const wobble=Math.sin((x+y)/80+t)*3;
+      ctx.fillRect(x,y+wobble,3,3);
+    }
+  }
+
+  const offX=vw/2-camera.x;
+  const offY=vh/2-camera.y;
+
+  // draw islands
+  for(const isl of ISLANDS){
+    const sx=isl.x+offX, sy=isl.y+offY;
+    if(sx<-300||sx>vw+300||sy<-300||sy>vh+300)continue;
+    // island shadow
+    ctx.beginPath();
+    ctx.ellipse(sx,sy+isl.r*0.85,isl.r*0.95,isl.r*0.5,0,0,Math.PI*2);
+    ctx.fillStyle='rgba(0,0,0,.15)';
+    ctx.fill();
+    // sand ring
+    ctx.beginPath();
+    ctx.arc(sx,sy,isl.r,0,Math.PI*2);
+    ctx.fillStyle='#f4d58d';
+    ctx.fill();
+    // green top
+    ctx.beginPath();
+    ctx.arc(sx,sy,isl.r*0.75,0,Math.PI*2);
+    ctx.fillStyle=isl.color;
+    ctx.fill();
+    // label
+    ctx.font='bold 16px monospace';
+    ctx.fillStyle='#fff';
+    ctx.textAlign='center';
+    ctx.strokeStyle='#000';ctx.lineWidth=3;
+    ctx.strokeText(isl.name,sx,sy);
+    ctx.fillText(isl.name,sx,sy);
+  }
+
+  // draw boat (always centered)
+  const bx=vw/2, by=vh/2;
+  ctx.save();
+  ctx.translate(bx,by);
+  ctx.rotate(boat.angle+Math.PI/2);
+  ctx.font='40px serif';
+  ctx.textAlign='center';
+  ctx.textBaseline='middle';
+  // wake trail
+  ctx.fillStyle='rgba(255,255,255,.25)';
+  ctx.beginPath();
+  ctx.ellipse(0,30,14,28,0,0,Math.PI*2);
+  ctx.fill();
+  ctx.fillText('⛵',0,0);
+  ctx.restore();
+}
+
+function drawMinimap(){
+  const c=document.getElementById('minimapCanvas');
+  const ctx=c.getContext('2d');
+  ctx.clearRect(0,0,90,90);
+  ctx.fillStyle='#1976a8';
+  ctx.fillRect(0,0,90,90);
+  const scale=90/WORLD_W;
+  for(const isl of ISLANDS){
+    ctx.beginPath();
+    ctx.arc(isl.x*scale,isl.y*(90/WORLD_H),4,0,Math.PI*2);
+    ctx.fillStyle=isl.color;
+    ctx.fill();
+  }
+  ctx.beginPath();
+  ctx.arc(boat.x*scale,boat.y*(90/WORLD_H),3,0,Math.PI*2);
+  ctx.fillStyle='#ffc24b';
+  ctx.fill();
+}
+
+/* ════════════════════════════════════════════════════
+   PANELS (placeholder stubs for Part 2)
+════════════════════════════════════════════════════ */
+function openProfilePanel(){toast('👤 Hồ sơ (sẽ hoàn thiện ở phần tiếp theo)');}
+function openMenuPanel(){toast('☰ Menu (sẽ hoàn thiện ở phần tiếp theo)');}
+function openLeaderboardPanel(){toast('🏆 Xếp hạng (sẽ hoàn thiện ở phần tiếp theo)');}
+</script>
+</body>
+</html>
